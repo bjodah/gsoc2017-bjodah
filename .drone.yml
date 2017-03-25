@@ -1,0 +1,17 @@
+build:
+  image: bjodah/bjodahimg16dev:latest
+  commands:
+    - cd ./application; make; cd -
+    - mkdir -p deploy/$CI_BRANCH
+    - cp application/proposal.{rst,html} deploy/$CI_BRANCH
+
+deploy:
+
+  rsync:
+    host: hera.physchem.kth.se
+    port: 22
+    user: gsoc2017-bjodah
+    source: deploy/
+    target: ~/deploy
+    recursive: true
+    delete: false
