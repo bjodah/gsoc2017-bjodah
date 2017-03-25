@@ -1,5 +1,68 @@
-GSoC 2017 Application Björn Dahlgren
-====================================
+GSoC 2017 - Better code printers
+================================
+
+.. contents::
+
+Name and contact information
+----------------------------
+Björn Dahlgren
+Email: `bjodah@gmail.com`_
+Phone:
+Blog: `bjodah.github.io`_
+
+Code printers
+-------------
+SymPy has facilities for generating code in other programming
+languages. Especially in statically typed compiled languages which
+offer considerable performance advantages compared to pure Python.
+
+Current status
+~~~~~~~~~~~~~~
+Currently the code printers in the language specific modules under
+`sympy.printing` are geard towards generating inline expressions,
+*e.g.*:
+
+.. code:: python
+
+   >>> import sympy as sp
+   >>> x = sp.Symbol('x')
+   >>> pw = sp.Piecewise((x, sp.Lt(x, 1), (x**2, True)
+   >>> sp.ccode(pw)
+   '(x < 1) ? x : pow(x, 2.0)`
+
+this works because C has a ternary operator, however, for Fortran
+earlier than Fortran 95 there is no ternary operator. The code printer
+base class has a work-around implemented for this, when we give the
+keyword argument ``assign_to`` the code printer can generate a
+statement instead of an expression:
+
+.. code:: python
+
+   >>> y = sp.Symbol('y')
+   >>> print(sp.fcode(pw, assign_to=y))
+          if (x < 1)
+              y = x
+          else
+              y = x**2
+          end if
+
+this in itself is not a problem, however the way it is implemented now
+is that there is a special case to handle Piecewise in the printing of
+`Assignment`. This approach fails when we want to print nested
+statements (*e.g.* a loop with conditional exit containing an if-statement).
+
+Proposed improvements
+~~~~~~~~~~~~~~~~~~~~~
+In ``sympy.codegen.ast`` there are building blocks for representing an
+abstract syntax tree. Let's consider the Newton-Rhapson method as a
+case:
+
+.. code:: python
+
+   >>> import sympy as sp
+   >>> from sympy.codegen.ast import WhileLoop
+   ...
+
 
 Finite precision arithmetics
 ----------------------------
