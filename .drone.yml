@@ -3,7 +3,7 @@ build:
   commands:
     - cd ./application; make; cd -
     - mkdir -p deploy/$CI_BRANCH
-    - cp application/proposal.{rst,html} deploy/$CI_BRANCH
+    - cp application/proposal.rst application/proposal.html deploy/$CI_BRANCH
 
 deploy:
 

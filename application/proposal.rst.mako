@@ -10,7 +10,7 @@ Consider the following code:
    >>> import sympy as sp
    >>> x, y = sp.symbols('x y')
    >>> expr = sp.exp(x) + sp.exp(y)
-   >>> ccode(expr)
+   >>> sp.ccode(expr)
    'exp(x) + exp(y)'
 
 If we have *a priori* knowledge about the magnitudes of the variables we
@@ -24,8 +24,8 @@ Here is a mock up of what a smart code printer could do:
    >>> sp.smart_ccode(expr, knowledge={sp.Gt(x + log(1e-10), y)}, precision='binary32')  # doctest: +SKIP
    'exp(x)'
 
-above the smart code printer would use the fact that IEEE 754 binary64
-and binary32 have machine epsilon values of 2:sup:`-53` and 2:sup:`-24` in order
+above the smart code printer would use the fact that `IEEE 754 <http://grouper.ieee.org/groups/754/>`_ binary64
+and binary32 have machine epsilon values of :math:`2^{-53}` and :math:`2^{-24}` in order
 to simplify the 32-bit version not to include the ``exp(y)`` term
 (which would have no effect on the finite precision expression due to
 shifting).
@@ -42,12 +42,18 @@ perserving form, consider *e.g.*:
 
 .. code:: python
 
-   >>> sp.smart_ccode(2**x + log(x)/log(2))
+   >>> sp.smart_ccode(2**x + log(x)/log(2))  # doctest: +SKIP
    'exp2(x) + log2(x)'
 
-here the C-code printer would use the `exp2` and `log2` functions from
+here the C-code printer would use the ``exp2`` and ``log2`` functions from
 the C99 standard. Some transformations would only be beneficial if
 the magnitude of the variables are within some span, *e.g.*: 
 
-   >>> smart_ccode((2*exp(x) - 2)*(3*exp(y) - 3), typically={x: And(-.1 < x, x < .1)})
+.. code:: python
+
+   >>> smart_ccode((2*exp(x) - 2)*(3*exp(y) - 3), typically={x: And(-.1 < x, x < .1)})  # doctest: +SKIP
    '6*expm1(x)*(exp(y) - 1)'
+
+here the proposed printer would use `expm1
+<http://en.cppreference.com/w/c/numeric/math/expm1>`_ from the C99
+standard to avoid cancellation in the subtraction.
