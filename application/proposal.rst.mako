@@ -120,3 +120,8 @@ the magnitude of the variables are within some span, *e.g.*:
 here the proposed printer would use `expm1
 <http://en.cppreference.com/w/c/numeric/math/expm1>`_ from the C99
 standard to avoid cancellation in the subtraction.
+
+
+Notes
+-----
+A related issue: SymPy's `cse` sometimes identifies boolean expressions, that's fine if you target `C++11` (I declare the type of the cse `const auto` and leaves type deduction to the compiler). In C it is a bit more tricky - we should eventually teach the codegen facilities about this.
