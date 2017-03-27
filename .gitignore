@@ -3,3 +3,4 @@ application/proposal.html
 **.ipynb_checkpoints/
 **__pycache__/
 .cache/
+application/style.css

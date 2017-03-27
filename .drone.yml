@@ -1,7 +1,7 @@
 build:
   image: bjodah/bjodahimg16:v1.2
   commands:
-    - python3 -m pip install --ignore-installed -f . sympy-03d75d6.tar.gz
+    - python3 -m pip install --ignore-installed -f .binaries/sympy-03d75d6.tar.gz
     - cd ./application;
     - make
     - jupyter nbconvert --to=html --debug --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb

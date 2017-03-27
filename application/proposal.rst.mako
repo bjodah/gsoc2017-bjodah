@@ -1,5 +1,5 @@
-GSoC 2017 - Better code printers
-================================
+GSoC 2017 - Improved code-generation facilities
+===============================================
 
 .. contents::
 
@@ -33,8 +33,8 @@ Currently the code printers in the language specific modules under
 
    >>> import sympy as sp
    >>> x = sp.Symbol('x')
-   >>> pw = sp.Piecewise((x, sp.Lt(x, 1)), (x**2, True))
-   >>> print(sp.ccode(pw))
+   >>> pw1 = sp.Piecewise((x, sp.Lt(x, 1)), (x**2, True))
+   >>> print(sp.ccode(pw1))
    ((x < 1) ? (
       x
    )
@@ -52,7 +52,7 @@ statement instead of an expression:
 .. code:: python
 
    >>> y = sp.Symbol('y')
-   >>> print(sp.fcode(pw, assign_to=y))
+   >>> print(sp.fcode(pw1, assign_to=y))
          if (x < 1) then
             y = x
          else
@@ -92,7 +92,8 @@ case (this is working --- but unpolished --- code to convey the point):
 
    >>> from mockups import my_ccode, newton_raphson_algorithm
    >>> x, dx, atol = sp.symbols('x dx atol')
-   >>> algo = newton_raphson_algorithm(sp.cos(x) - x**3, x, atol, dx)
+   >>> expr = sp.cos(x) - x**3
+   >>> algo = newton_raphson_algorithm(expr, x, atol, dx)
    >>> print(my_ccode(algo))
    double dx = INFINITY;
    while (fabs(dx) > atol) {
@@ -106,6 +107,38 @@ could be of great value for users writing applied code.
 A popular[sumpy,pycalphad] feature of SymPy is common subexpresison
 elimination (CSE), currently the code printers are not catered to deal
 with these in an optimal way. Consider e.g.:
+
+.. code:: python
+
+   >>> pw2 = sp.Piecewise((2/(x + 1), sp.Lt(x, 1)), (sp.exp(1-x), True))
+   >>> cses, (new_expr,) = sp.cse(pw1 + pw2)
+   >>> print(cses)
+   [(x0, x < 1)]
+
+Currently the codeprinters don't know how to properly deal with
+booleans, this should be improved so that codeblocks can be generated
+where cse variables have their type deteremined automatically:
+
+   >>> from mockups import assign_cse
+   >>> print(my_ccode(assign_cse(y, pw1 + pw2)))
+   {
+      const _Bool x0 = x < 1;
+      y = ((x0) ? (
+         x
+      )
+      : (
+         pow(x, 2)
+      )) + ((x0) ? (
+         2/(x + 1)
+      )
+      : (
+         exp(-x + 1)
+      ));
+   }
+   
+note that when using ``C++11`` as target language we may choose to
+declare CSE variables ``auto`` which leaves type-deduction to the
+compiler.
 
 
 Finite precision arithmetics
@@ -128,7 +161,23 @@ Note how our lowered precision affected what function calls that were generated 
 ``powf``, ``cosf`` & ``sinf``). It should be noted that ``C++`` already allows the user to
 write type-generic code, but still today all platforms support ``C++``, and for those platforms
 the conveninece of generating code based precision can greatly reduce the manual labour of
-rewriting the expressions.
+rewriting the expressions. The magnitude for the choice of atol inherently depends on
+the machine epsilon for the underlying data type, it would therefore
+be convinient if there existed a node type which can reference the the
+printer settings:
+
+.. code:: python
+
+   >>> from mockups import PrinterSetting
+   >>> prec = PrinterSetting('precision')
+   >>> algo2 = newton_raphson_algorithm(expr, x, atol=10**(1-prec), delta=dx)
+   >>> print(my_ccode(algo2, settings={'precision': 15}))
+   double dx = INFINITY;
+   while (fabs(dx) > pow(10, 1 - 15)) {
+      dx = (pow(x, 3) - cos(x))/(-3*pow(x, 2) - sin(x));
+      x += dx;
+   }
+
 
 Making the code printers aware of precision would also allow for for
 more correct results by transforming the expression into its most

@@ -2,7 +2,7 @@ from __future__ import (absolute_import, division, print_function)
 
 from math import ceil, log10
 import numpy as np
-from sympy.core import S
+from sympy.core import S, AtomicExpr
 from sympy.printing.ccode import C99CodePrinter, known_functions_C99
 from sympy.printing.precedence import precedence
 
@@ -19,18 +19,19 @@ class MyPrinter(C99CodePrinter):
     def _print_Type(self, expr):
         type_name, = expr.args
         if type_name in ('intc', 'integer'):
-            type_name = 'int'
-        if type_name == 'real':
+            return 'int'
+        elif type_name == 'real':
             prec = self._settings.get('precision', 15)
             if prec <= _float_lim:
-                type_name = 'float'
+                return 'float'
             elif prec <= _double_lim:
-                type_name = 'double'
+                return 'double'
             elif prec <= _long_double_lim:
-                type_name = 'long double'
+                return 'long double'
             else:
                 raise NotImplementedError()
-        return type_name
+        elif type_name == 'bool':
+            return '_Bool'
 
     def _print_While(self, expr):
         condition, body = map(self._print, expr.args)
@@ -39,6 +40,9 @@ class MyPrinter(C99CodePrinter):
     def _print_Scope(self, expr):
         arg, = expr.args
         return '{\n%s\n}' % self._print(arg)
+
+    def _print_Variable(self):
+        return self._print(self.symbol)
 
     def _print_Declaration(self, expr):
         var, value = expr.args
@@ -50,9 +54,14 @@ class MyPrinter(C99CodePrinter):
                 pc=' const' if var.pointer_const else '',
                 r=' restrict' if var.restrict else ''
             )
-        elif not isinstance(var, Variable):
-            var = Variable(var)
-            result = '%s %s' % tuple(map(self._print, (var.type, var.symbol)))
+        elif isinstance(var, Variable):
+            result = '{vc}{t} {s}'.format(
+                vc='const ' if var.const else '',
+                t=self._print(var.type),
+                s=self._print(var.symbol)
+            )
+        else:
+            raise NotImplementedError("Unknown type of var: %s" % type(var))
         if value is not None:
             result += ' = %s' % self._print(value)
         return '%s;' % result
@@ -129,6 +138,9 @@ class MyPrinter(C99CodePrinter):
             return '%spow%s(%s, %s)' % (self._ns, suffix, self._print(expr.base),
                                    self._print(expr.exp))
 
+    def _print_PrinterSetting(self, expr):
+        return str(self._settings[expr.args[0]])
+
 
 class While(Basic):
     """
@@ -163,13 +175,13 @@ class Type(Basic):
     ---------
     name : str
         Either an explicit type: intc, intp, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
-        float16, float32, float64, complex64, complex128.
+        float16, float32, float64, complex64, complex128, bool.
         Or only kind (precision decided by code-printer): real, integer
 
     """
     allowed_names = tuple('intc intp int8 int16 int32 int64 uint8 uint16 uint32'.split() +
                           'uint64 float16 float32 float64 complex64 complex128'.split() +
-                          'real integer'.split())
+                          'real integer bool'.split())
     __slots__ = []
 
     def __new__(cls, name):
@@ -179,6 +191,14 @@ class Type(Basic):
             raise ValueError("Unknown type: %s" % name)
         return Basic.__new__(cls, name)
 
+def _type_from_expr(expr):
+    if expr.is_integer:
+        return Type('integer')
+    elif expr.is_Relational:
+        return Type('bool')
+    else:
+        return Type('real')
+
 
 class Variable(Basic):
     """ name, type, constness """
@@ -186,10 +206,7 @@ class Variable(Basic):
         if isinstance(symbol, Variable):
             return symbol
         if type_ is None:
-            if symbol.is_integer:
-                type_ = 'integer'
-            else:
-                type_ = 'real'
+            type_ = _type_from_expr(symbol)
         return Basic.__new__(cls, symbol, Type(type_), const)
 
     @property
@@ -208,10 +225,7 @@ class Pointer(Basic):
     """ name, type, value_const, pointer_const, restrict"""
     def __new__(cls, symbol, type_=None, value_const=False, pointer_const=False, restrict=False):
         if type_ is None:
-            if symbol.is_integer:
-                type_ = Type('integer')
-            else:
-                type_ = Type('real')
+            type_ = _type_from_expr(symbol)
         return Basic.__new__(cls, symbol, typ_, value_const, pointer_const, restrict)
 
     @property
@@ -237,8 +251,17 @@ class Pointer(Basic):
 
 
 class Declaration(Basic):
-    def __new__(cls, variable, value=None):
-        return Basic.__new__(cls, variable, value)
+    def __new__(cls, var, value=None, const=None):
+        if not isinstance(var, (Variable, Pointer)):
+            if value is not None:
+                type_ = _type_from_expr(S(value))
+            else:
+                type_ = None
+            var = Variable(var, type_, const)
+        else:
+            if const is not None:
+                raise ValueError("Cannot change constness of an existing Variable/Pointer")
+        return Basic.__new__(cls, var, value)
 
 
 class FunctionDefinition(Basic):
@@ -255,6 +278,9 @@ class FunctionPrototype(Basic):
         return_type, name, inputs, body = func_def.args
         return cls(return_type, name, tuple(inp.type for inp in inputs))
 
+
+class PrinterSetting(AtomicExpr):
+    pass
 
 class ReturnStatement(Basic):
     pass
