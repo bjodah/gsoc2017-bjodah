@@ -119,6 +119,8 @@ Currently the codeprinters don't know how to properly deal with
 booleans, this should be improved so that codeblocks can be generated
 where cse variables have their type deteremined automatically:
 
+.. code:: python
+
    >>> from mockups import assign_cse
    >>> print(my_ccode(assign_cse(y, pw1 + pw2)))
    {

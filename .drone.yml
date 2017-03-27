@@ -1,14 +1,15 @@
 build:
   image: bjodah/bjodahimg16:v1.2
   commands:
-    - python3 -m pip install --ignore-installed -f .binaries/sympy-03d75d6.tar.gz
+    - (cd .binaries; python3 -m pip install --ignore-installed -f . sympy-03d75d6.tar.gz)
+    - (cd .binaries; python2 -m pip install --ignore-installed -f . sympy-03d75d6.tar.gz rst2pdf-0.93.tar.gz)
     - cd ./application;
     - make
     - jupyter nbconvert --to=html --debug --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb
     - python3 -m pytest
     - cd -
     - mkdir -p deploy/$CI_BRANCH
-    - cp application/proposal.rst application/*.html deploy/$CI_BRANCH
+    - cp application/proposal.rst application/*.html application/*.pdf deploy/$CI_BRANCH
 
 deploy:
 

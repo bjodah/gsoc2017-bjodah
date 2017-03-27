@@ -4,3 +4,11 @@ application/proposal.html
 **__pycache__/
 .cache/
 application/style.css
+
+# Latex files:
+application/proposal.aux
+application/proposal.log
+application/proposal.out
+application/proposal.pdf
+application/proposal.tex
+application/proposal.toc
