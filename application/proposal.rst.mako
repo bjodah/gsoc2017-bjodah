@@ -219,9 +219,10 @@ Here is a mock up of what a smart code printer could do:
 
 .. code:: python
 
-   >>> sp.smart_ccode(expr, knowledge={sp.Gt(x + log(1e-10), y)}, precision=15)  # doctest: +SKIP
+   >>> knol = {sp.Gt(x + log(1e-10), y)}
+   >>> sp.smart_ccode(expr, knowledge=knol, precision=15)  # doctest: +SKIP
    'exp(x) + exp(y)'
-   >>> sp.smart_ccode(expr, knowledge={sp.Gt(x + log(1e-10), y)}, precision=7)  # doctest: +SKIP
+   >>> sp.smart_ccode(expr, knowledge=knol, precision=7)  # doctest: +SKIP
    'expf(x)'
 
 above the smart code printer would use the fact that `IEEE 754
@@ -252,11 +253,36 @@ matrices have dense LU decompositions due to fill-in), the
 approximation could then be used to generate tailored preconditioners
 based only on knowledge on expected magnitude of variables.
 
+Another area of possible improvements is rewriting of expresisons to
+avoid under-/over-flow, consider *e.g.*:
 
-Notes
------
-A related issue: SymPy's `cse` sometimes identifies boolean
-expressions, that's fine if you target `C++11` (I declare the type of
-the cse `const auto` and leaves type deduction to the compiler). In C
-it is a bit more tricky - we should eventually teach the codegen
-facilities about this. 
+.. code:: python
+
+   >>> logsum = sp.log(sp.exp(800) + sp.exp(-800))
+   >>> str(logsum.evalf()).rstrip('0')
+   800.
+
+there are a few hundred of zeros before the second term makes
+its presence known. The C code generated for the above expression
+looks like this:
+
+.. code:: python
+
+   >>> print(sp.ccode(logsum))
+   log(exp(-800) + exp(800))
+
+compiling that expression as a C program:
+
+.. code:: C
+
+<%include file="logsum.c">
+
+
+and running that:
+
+   $ ./logsum
+   <%include file="logsum.out">
+
+illustrates the dangers of finite precision arithmetics.
+In this particular case, the expression could be rewritten
+as:

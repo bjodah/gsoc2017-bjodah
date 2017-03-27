@@ -5,7 +5,7 @@ all: proposal.html proposal.pdf
 style.css: ../.binaries/cskeeters-rst2html-style.tar.bz2
 	tar xjf $< --wildcards --strip-components=1 "*/$@"
 
-proposal.rst: proposal.rst.mako enmako.py
+proposal.rst: proposal.rst.mako enmako.py logsum.out
 	python3 enmako.py $< -o $@
 	python3 -m doctest $@
 
@@ -18,3 +18,9 @@ proposal.tex: proposal.rst
 proposal.pdf: proposal.tex # proposal.rst
 	pdflatex $<
 	# rst2pdf $< $@
+
+logsum: logsum.c
+	$(CC) -Wall -Wextra -Werror -o $@ $< -lm
+
+logsum.out: logsum
+	./$< >$@
