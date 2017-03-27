@@ -219,7 +219,7 @@ Here is a mock up of what a smart code printer could do:
 
 .. code:: python
 
-   >>> knol = {sp.Gt(x + log(1e-10), y)}
+   >>> knol = {sp.Gt(x + sp.log(1e-10), y)}
    >>> sp.smart_ccode(expr, knowledge=knol, precision=15)  # doctest: +SKIP
    'exp(x) + exp(y)'
    >>> sp.smart_ccode(expr, knowledge=knol, precision=7)  # doctest: +SKIP
@@ -260,7 +260,7 @@ avoid under-/over-flow, consider *e.g.*:
 
    >>> logsum = sp.log(sp.exp(800) + sp.exp(-800))
    >>> str(logsum.evalf()).rstrip('0')
-   800.
+   '800.'
 
 there are a few hundred of zeros before the second term makes
 its presence known. The C code generated for the above expression
@@ -275,13 +275,13 @@ compiling that expression as a C program:
 
 .. code:: C
 
-<%include file="logsum.c">
+<%include file="logsum.c"/>
 
 
 and running that:
 
    $ ./logsum
-   <%include file="logsum.out">
+   <%include file="logsum.out"/>
 
 illustrates the dangers of finite precision arithmetics.
 In this particular case, the expression could be rewritten

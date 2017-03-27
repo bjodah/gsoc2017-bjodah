@@ -7,6 +7,7 @@
 
 import io
 import argh
+from mako.lookup import TemplateLookup
 from mako.template import Template
 from mako.exceptions import text_error_template
 
@@ -16,10 +17,10 @@ def render_mako_template(source_template, variables):
         template_str = source_template.read()
     except:
         template_str = io.open(source_template, 'rt', encoding='utf-8').read()
-
+    lookup = TemplateLookup(directories=['.'])
     try:
         rendered = Template(template_str, input_encoding='utf-8',
-                            output_encoding='utf-8').render(**variables)
+                            output_encoding='utf-8', lookup=lookup).render(**variables)
     except:
         print(text_error_template().render())
         raise
