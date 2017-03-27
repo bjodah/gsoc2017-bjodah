@@ -1,2 +1,4 @@
 application/proposal.rst
 application/proposal.html
+**.ipynb_checkpoints/
+**__pycache__/
