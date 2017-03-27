@@ -12,9 +12,9 @@ proposal.rst: proposal.rst.mako enmako.py
 proposal.html: proposal.rst style.css rst2html.py
 	python2 ./rst2html.py --stylesheet=style.css $< $@
 
-# proposal.tex: proposal.rst
-# 	rst2latex.py $< $@
+proposal.tex: proposal.rst
+	rst2latex.py $< $@
 
-proposal.pdf: proposal.rst # proposal.tex
-	# pdflatex $<
-	rst2pdf $< $@
+proposal.pdf: proposal.tex # proposal.rst
+	pdflatex $<
+	# rst2pdf $< $@
