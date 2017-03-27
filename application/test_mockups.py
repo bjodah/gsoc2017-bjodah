@@ -1,8 +1,10 @@
-from mockups import newton_raphson
+from __future__ import (absolute_import, division, print_function)
 
 import sympy as sp
+from sympy.codegen.ast import Assignment
 from pycompilation import compile_link_import_strings
-from mockups import MyPrinter, newton_raphson_algorithm, newton_raphson_function, Type
+from printerdemo import MyPrinter, Type
+from mockups import newton_raphson_algorithm, newton_raphson_function
 
 def test_Type():
     t = Type
@@ -12,7 +14,7 @@ def test_Type():
 def test_newton_raphson_algorithm():
     x, dx, atol = sp.symbols('x dx atol')
     expr = sp.cos(x) - x**3
-    algo = newton_raphson_algorithm(expr, x, dx, atol)
+    algo = newton_raphson_algorithm(expr, x, atol, dx)
     assert algo.has(Assignment(dx, -expr/expr.diff(x)))
 
 
@@ -22,7 +24,7 @@ def test_newton_raphson_function():
     func = newton_raphson_function(expr, x)
     mod = compile_link_import_strings([
         ('newton.c', ('#include <math.h>\n'
-                      '#include <stdio.h>\n') + newton_c),
+                      '#include <stdio.h>\n') + MyPrinter().doprint(func)),
         ('_newton.pyx', ("cdef extern double newton(double)\n"
                          "def py_newton(x):\n"
                          "    return newton(x)\n"))

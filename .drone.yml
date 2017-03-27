@@ -1,10 +1,9 @@
 build:
-  image: bjodah/bjodahimg16dev:latest
+  image: bjodah/bjodahimg16:v1.2
   commands:
+    - python3 -m pip install --ignore-installed -f . sympy-03d75d6.tar.gz
     - cd ./application;
     - make
-    - python3 -m pip install --upgrade --upgrade-strategy only-if-needed pycompilation
-    - python3 -m pip install --upgrade --upgrade-strategy only-if-needed https://github.com/sympy/sympy/archive/master.tar.gz
     - jupyter nbconvert --to=html --debug --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb
     - python3 -m pytest
     - cd -

@@ -4,7 +4,11 @@ from sympy import And, Gt, Lt, Abs, Dummy, oo, Tuple
 from sympy.codegen.ast import Assignment, AddAugmentedAssignment, CodeBlock
 
 from printerdemo import (Declaration, PrintStatement, FunctionDefinition,
-                         While, Scope, ReturnStatement)
+                         While, Scope, ReturnStatement, MyPrinter)
+
+def my_ccode(expr, **kwargs):
+    return MyPrinter(**kwargs).doprint(expr)
+
 
 def newton_raphson_algorithm(expr, wrt, atol=1e-12, delta=None, debug=False,
                              itermax=None, counter=None):

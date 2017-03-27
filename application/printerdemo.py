@@ -2,13 +2,18 @@ from __future__ import (absolute_import, division, print_function)
 
 from math import ceil, log10
 import numpy as np
-from sympy.printing.ccode import C99CodePrinter
+from sympy.core import S
+from sympy.printing.ccode import C99CodePrinter, known_functions_C99
+from sympy.printing.precedence import precedence
 
 from sympy.core.basic import Basic
 header_requirements = {
     'PrintStatement': 'stdio.h',
 }
 
+_float_lim = ceil(-log10(np.finfo(np.float32).eps))
+_double_lim = ceil(-log10(np.finfo(np.float64).eps))
+_long_double_lim = ceil(-log10(np.finfo(np.float128).eps))
 
 class MyPrinter(C99CodePrinter):
     def _print_Type(self, expr):
@@ -17,11 +22,11 @@ class MyPrinter(C99CodePrinter):
             type_name = 'int'
         if type_name == 'real':
             prec = self._settings.get('precision', 15)
-            if prec <= ceil(-log10(np.finfo(np.float32).eps)):
+            if prec <= _float_lim:
                 type_name = 'float'
-            elif prec <= ceil(-log10(np.finfo(np.float64).eps)):
+            elif prec <= _double_lim:
                 type_name = 'double'
-            elif prec <= ceil(-log10(np.finfo(np.float128).eps)):
+            elif prec <= _long_double_lim:
                 type_name = 'long double'
             else:
                 raise NotImplementedError()
@@ -70,6 +75,59 @@ class MyPrinter(C99CodePrinter):
     def _print_ReturnStatement(self, expr):
         arg, = expr.args
         return 'return %s;' % self._print(arg)
+
+    def _get_precision_suffix(self):
+        prec = self._settings.get('precision', 15)
+        if prec <= _float_lim:
+            suffix = 'f'
+        elif prec <= _double_lim:
+            suffix = ''
+        elif prec <= _long_double_lim:
+            suffix = 'l'
+        else:
+            raise NotImplementedError("Need a higher precision datatype.")
+        return suffix
+
+    def _print_math_func(self, expr):
+        known = known_functions_C99[expr.__class__.__name__]
+        if not isinstance(known, str):
+            for cb, name in known:
+                if cb(*expr.args):
+                    known = name
+                    break
+            else:
+                raise ValueError("No matching printer")
+
+        return '{ns}{name}{suffix}({args})'.format(
+            ns=self._ns,
+            name=known,
+            suffix=self._get_precision_suffix(),
+            args=', '.join(map(self._print, expr.args))
+        )
+
+    def _print_sin(self, expr):
+        return self._print_math_func(expr)
+
+    def _print_cos(self, expr):
+        return self._print_math_func(expr)
+
+    def _print_Abs(self, expr):
+        return self._print_math_func(expr)
+
+    def _print_Pow(self, expr):
+        if "Pow" in self.known_functions:
+            return self._print_Function(expr)
+        PREC = precedence(expr)
+        suffix = self._get_precision_suffix()
+        if expr.exp == -1:
+            return '1.0%s/%s' % (suffix.upper(), self.parenthesize(expr.base, PREC))
+        elif expr.exp == 0.5:
+            return '%ssqrt%s(%s)' % (self._ns, suffix, self._print(expr.base))
+        elif expr.exp == S.One/3 and self.standard != 'C89':
+            return '%scbrt%s(%s)' % (self._ns, suffix, self._print(expr.base))
+        else:
+            return '%spow%s(%s, %s)' % (self._ns, suffix, self._print(expr.base),
+                                   self._print(expr.exp))
 
 
 class While(Basic):
