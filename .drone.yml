@@ -1,9 +1,13 @@
 build:
   image: bjodah/bjodahimg16dev:latest
   commands:
-    - cd ./application; make; cd -
+    - cd ./application;
+    - make
+    - jupyter nbconvert --to=html --debug --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb
+    - python3 -m pytest
+    - cd -
     - mkdir -p deploy/$CI_BRANCH
-    - cp application/proposal.rst application/proposal.html deploy/$CI_BRANCH
+    - cp application/proposal.rst application/*.html deploy/$CI_BRANCH
 
 deploy:
 
