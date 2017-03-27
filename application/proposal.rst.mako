@@ -51,16 +51,33 @@ is that there is a special case to handle Piecewise in the printing of
 `Assignment`. This approach fails when we want to print nested
 statements (*e.g.* a loop with conditional exit containing an if-statement).
 
+The module ``sympy.utilities.codegen`` currently offers the most complete
+functionality to generate complete functions. Its design however does not
+lend itself to easy extension through subclassing, *e.g.* the ``CodeGen.routine``
+method does not use the visitor pattern, instead it handles different types
+through ``if``-statements which makes it hard to use with expressions containing
+user defined classes. Also the ``CCodeGen`` class hard-codes (at least in a
+method which may be overloaded) what headers to include. The notion of types in
+``sympy.utilities.codegen`` is also somewhat confusing (there is no easy way
+to use the binary32 IEEE 754 floating point data type for example).
+
 Proposed improvements
 ~~~~~~~~~~~~~~~~~~~~~
 In ``sympy.codegen.ast`` there are building blocks for representing an
-abstract syntax tree. Let's consider the Newton-Rhapson method as a
-case:
+abstract syntax tree. This module should be extended by adding more node
+types. It would allow the either the current ``codegen`` facilities to gradually
+be migrated to use the ``sympy.codegen.ast`` module or (if backward incompatiblity
+issues prove to be substantial) introduce a new codeprinter using these facilities.
+
+A new module: ``sympy.codegen.algortihms``, should be created, containg common algorithms
+which are often rewritten today in every new project. This module would leverage the to-be-written
+classes in ``sympy.codegen.ast``. Let's consider the Newton-Rhapson method as a
+case (this is working --- but unpolished --- code to convey the point):
 
 .. code:: python
 
    >>> import sympy as sp
-   >>> from sympy.codegen.ast import WhileLoop
+   >>> 
    ...
 
 

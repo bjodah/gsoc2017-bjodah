@@ -3,6 +3,8 @@ build:
   commands:
     - cd ./application;
     - make
+    - python3 -m pip install --upgrade --upgrade-strategy only-if-needed pycompilation
+    - python3 -m pip install --upgrade --upgrade-strategy only-if-needed https://github.com/sympy/sympy/archive/master.tar.gz
     - jupyter nbconvert --to=html --debug --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb
     - python3 -m pytest
     - cd -
