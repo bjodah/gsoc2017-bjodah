@@ -2,10 +2,15 @@
 #include <math.h>
 #include <stdio.h>
 
+void report_overflow() {
+    if (fetestexcept(FE_OVERFLOW))
+        printf("overflow reported\n");
+}
+
 int main(){
     feclearexcept(FE_ALL_EXCEPT);
-    printf("%d\n", fetestexcept(FE_OVERFLOW));
+    report_overflow();
     printf("%.5g\n", log(exp(800) + exp(-800)));
-    printf("%d\n", fetestexcept(FE_OVERFLOW));
+    report_overflow();
     return 0;
 }

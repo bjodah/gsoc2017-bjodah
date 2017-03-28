@@ -18,6 +18,6 @@ deploy:
     port: 22
     user: gsoc2017-bjodah
     source: deploy/
-    target: ~/deploy
+    target: ~/public_html
     recursive: true
     delete: false

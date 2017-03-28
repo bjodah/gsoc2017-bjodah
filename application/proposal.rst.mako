@@ -1,21 +1,128 @@
-GSoC 2017 - Improved code-generation facilities
-===============================================
+.. ${'{0} eval: (read-only-mode) {0}'.format('-*-')}
+
+Improved code-generation facilities
+===================================
 
 .. contents::
 
-Name and contact information
-----------------------------
-Björn Dahlgren
-Email: `<bjodah@gmail.com>`_
-Phone: Will be provided upon request
-Blog: `<https://bjodah.github.io>`_
+About me
+--------
+
++---------------+----------------------------------------------------------------+
+|Name           |Björn Dahlgren                                                  |
++---------------+----------------------------------------------------------------+
+|Email          |`bjodah@gmail.com <bjodah@gmail.com>`_                          |
++---------------+----------------------------------------------------------------+
+|University     |`KTH Royal Institute of Technology <http://www.kth.se>`_,       |
+|               |Stockholm, Sweden                                               |
++---------------+----------------------------------------------------------------+
+|Program        |PhD-student, project: Modelling interfacial radiation chemistry |
++---------------+----------------------------------------------------------------+
+|Blog           |`<https://bjodah.github.io>`_                                   |
++---------------+----------------------------------------------------------------+
+|Github profile |`<https://www.github.com/bjodah>`_                              |
++---------------+----------------------------------------------------------------+
+|Time-zone      |UTC+01:00                                                       |
++---------------+----------------------------------------------------------------+
+|Phone          |Will be provided upon request                                   |
++---------------+----------------------------------------------------------------+
+
+Background
+~~~~~~~~~~
+I am a PhD student in my final year. I have a MSc in Chemical Science and
+Engineering which included courses in numerical methods and scientific
+programming. I am proficient with Python/C/C++/Fortran and have a
+general interest in scientific computing. My preferred development
+environment is Emacs under Linux using git.
+
+Earlier contributions
+~~~~~~~~~~~~~~~~~~~~~
+I have been an active contributor to SymPy since about 3 years with
+`35 pull-requestes <https://github.com/sympy/sympy/pulls/bjodah>`_
+(of which 25 have been merged) for SymPy (*e.g.* a `C++ code printer
+<https://github.com/sympy/sympy/pull/11637>`_), 
+`a handful <https://github.com/sympy/sympy_benchmarks/pulls/bjodah>`_
+for ``sympy_benchmarks``,
+`one <https://https://github.com/symengine/symengine/pull/1075>`_
+for SymEngine and `a few
+<https://github.com/symengine/symengine.py/pulls/bjodah>`_
+for the Python wrappers for SymEngine. I'm also the author of two
+open-source python libraries with a general audience which use SymPy 
+as their primary backend for solving `initial value problems
+<https://en.wikipedia.org/wiki/Initial_value_problem>`_ (IVPs) for 
+`systems of ordinary differential equations (ODE systems)
+<https://en.wikipedia.org/wiki/Ordinary_differential_equation#System_of_ODEs>`_
+and systems of nonlinear equations respectively (`example
+<https://en.wikipedia.org/wiki/Gradient_descent#Solution_of_a_non-linear_system>`_): 
+
+- `pyodesys`_: Solving IVPs for systems of ODEs
+- `pyneqsys`_: Solving (possibly overdetermined) noninear systems by optimization.
+
+I have been using SymPy to do code-generation in various domain
+specific projects: 
+
+- `ChemPy <https://github.com/bjodah/chempy>`_: solving chemical equilibria
+  and kinetics using `pyodesys`_ & `pyneqsys`_
+- `mdiosvcor <https://github.com/bjodah/mdiosvcor>`_ - Molecular
+  Dynamics Ion Solvation Correction terms (using a `patched version`_ of
+  ``sympy.utilities.autowrap``)
+- `fastinverse <https://github.com/bjodah/fastinverse>`_: using
+  `pycodeexport <https://github.com/bjodah/pycodeexport>`_ (which uses
+  SymPy) and `pycompilation <https://github.com/bjodah/pycompilation>`_
+- `cInterpol <https://github.com/bjodah/cinterpol>`_: library for fast
+  polynomial interpolation where the formulae are derived
+  using ``sympy.solve`` during the code-generation phase.
+
+.. _pyodesys: https://github.com/bjodah/pyodesys
+.. _pyneqsys: https://github.com/bjodah/pyneqsys
+.. _patched version: https://github.com/bjodah/mdiosvcor/blob/master/mdiosvcor/mod_autowrap.py
+
+Time commitment
+~~~~~~~~~~~~~~~
+If accepted, I will have no other commitments, meaning that I will be
+avaiable at least 40 h/week during the program. Any shorter vaccation
+will, in addition to being coordinated with the mentor, be compensated
+in advance e.g. by working 50 h/week during 4 weeks leading up to 1
+week of vaccation. I will hopefully spend one week at the SciPy 2017
+conference, in which case I will help out teaching in a tutorial on
+using ``SymPy``'s code-generation facilities, and participate in
+code-sprints. This time will therefore go directly into the project.
 
 Synopsis
 --------
 The code-generation facilities in SymPy are already in active use in
-the research community [1], [2], [3]. There are, however, still many
-great opportunities for further improvements. Since SymPy is a CAS it
-has ... things that may be improved upon. being 
+the research community. There are, however, still many great
+opportunities for further improvements. As a CAS, SymPy has access to
+far more information than a compiler processing typical source code in
+languages such C/C++/Fortran. SymPy uses arbitrary precision
+arithmetics which avoids problems such as overflow (integer and
+floating point), loss of significance *etc.* High performance code
+relies on `floating-point arithmetic
+<https://en.wikipedia.org/wiki/Floating-point_arithmetic>`_ (which has
+`dedicated hardwarde
+<https://en.wikipedia.org/wiki/Floating-point_unit>`_ in modern CPUs),
+therefore, any code generation for a programming language which maps
+mathematical expressions to finite precision floating point
+instructions, would benefit greatly if that code-generation was made
+in such a way to minimize `precision loss
+<https://en.wikipedia.org/wiki/Loss_of_significance>`_, risk of
+under-/overflow *etc.*
+
+The current code-generation facilities are spread out over:
+
+- ``CodePrinter`` and its subclasses in the ``sympy.printing``
+  subpackage
+- ``CodeGen`` and its related classes in ``sympy.utilities.codegen``.
+- Types for abstract syntax tree (AST) generation in
+  ``sympy.codegen.ast`` and related langauge specific types in
+  ``sympy.codegen.cfunctions`` and ``sympy.codegen.ffunctions`` (for C-
+  and Fortran-functions respectively).
+
+Ideally the ``CodePrinter`` subclasses should only deal with
+expressing the AST types as valid code in their respective languages.
+Any re-ordering of expressions or transformations from one node type
+to another should be performed by other classes prior to reaching the
+printers.
 
 Code printers
 -------------
@@ -26,7 +133,7 @@ offer considerable performance advantages compared to pure Python.
 Current status
 ~~~~~~~~~~~~~~
 Currently the code printers in the language specific modules under
-`sympy.printing` are geard towards generating inline expressions,
+``sympy.printing`` are geard towards generating inline expressions,
 *e.g.*:
 
 .. code:: python
@@ -61,8 +168,8 @@ statement instead of an expression:
 
 
 this in itself is not a problem, however the way it is implemented now
-is that there is a special case to handle Piecewise in the printing of
-`Assignment`. This approach fails when we want to print nested
+is that there is a special case to handle ``Piecewise`` in the printing of
+``Assignment``. This approach fails when we want to print nested
 statements (*e.g.* a loop with conditional exit containing an if-statement).
 
 The module ``sympy.utilities.codegen`` currently offers the most complete
@@ -86,7 +193,7 @@ issues prove to be substantial) introduce a new codeprinter using these faciliti
 A new module: ``sympy.codegen.algorithms``, should be created, containg common algorithms
 which are often rewritten today in every new project. This module would leverage the to-be-written
 classes in ``sympy.codegen.ast``. Let's consider the Newton-Rhapson method as a
-case (this is working --- but unpolished --- code to convey the point):
+case (this is working — but unpolished — code to convey the point):
 
 .. code:: python
 
@@ -104,9 +211,9 @@ case (this is working --- but unpolished --- code to convey the point):
 this and related algorithms, for example (modifed) newton method for non-linear systems
 could be of great value for users writing applied code.
 
-A popular[sumpy,pycalphad] feature of SymPy is common subexpresison
-elimination (CSE), currently the code printers are not catered to deal
-with these in an optimal way. Consider e.g.:
+A popular feature of SymPy is common subexpresison elimination (CSE),
+currently the code printers are not catered to deal with these in an
+optimal way. Consider e.g.: 
 
 .. code:: python
 
@@ -141,6 +248,30 @@ where cse variables have their type deteremined automatically:
 note that when using ``C++11`` as target language we may choose to
 declare CSE variables ``auto`` which leaves type-deduction to the
 compiler.
+
+Currently the printers do not track what methods have been called.
+It would be useful if C-code printers kept a per instance set of
+header files (and libraries) needed, *e.g.*:
+
+.. code:: python
+
+   >>> from mockups import CPrinter
+   >>> instance = CPrinter()
+   >>> instance.doprint(x/(x+sp.pi))
+   'x/(x + M_PI)'
+   >>> print(instance.headers, instance.libraries)
+   set() set()
+   >>> instance.doprint(sp.Abs(x/(x+sp.pi)))
+   'fabs(x/(x + M_PI))'
+   >>> print(instance.headers, instance.libraries)
+   {'math.h'} {'m'}
+
+this would allow users to subclass the printers with methods using
+functions from libraries outside the standard. Currently the user
+would also have to subclass and modify ``CCodeGen`` if they wanted to
+use those facilites. With the above behaviour (and neccesssary changes
+to the code-generator in addition to the code-printer) that would no
+longer be required.
 
 
 Finite precision arithmetics
@@ -271,18 +402,138 @@ looks like this:
    >>> print(sp.ccode(logsum))
    log(exp(-800) + exp(800))
 
-compiling that expression as a C program:
+compiling that expression as a C program (and inspecting for floating
+point exceptions):
 
 .. code:: C
 
-<%include file="logsum.c"/>
+   ${'   '.join(open("logsum.c").readlines())}
 
 
 and running that:
 
+.. code:: bash
+
    $ ./logsum
-   <%include file="logsum.out"/>
+   ${'   '.join(open("logsum.out").readlines())}
 
 illustrates the dangers of finite precision arithmetics.
 In this particular case, the expression could be rewritten
 as:
+
+Timeline
+--------
+Below is a proposed schedule for the program.
+
+Before GSoC 2017
+~~~~~~~~~~~~~~~~
+Since I have the privelige of being a prior contributor to the project
+I am already familiar with the code-base and the parties interested in
+code-generation in SymPy. I will therefore use the time during the
+spring to general design (big picture structuring, API design) and
+reading up on the details of finite precision arithmetics:
+
+- `Higham, Accuracy and stability of numerical algorithms
+  <https://books.google.se/books/about/Accuracy_and_Stability_of_Numerical_Algo.html?id=7J52J4GrsJkC&printsec=frontcover>`_,
+  Chapter 27 in particular (and references therein).
+- IEEE's `recommended reading <http://grouper.ieee.org/groups/754/>`_
+  for the 754 standard.
+
+
+Phase I, 2017-05-30 – 2017-06-30
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This phase will be consisting of incremental additions and
+improvements to mainly existing infrastructure in SymPy.
+
+- Week 1:
+
+  - Add new types to ``sympy.codegen.ast`` related to precision,
+    e.g. ``Type`` ('float64', 'float32', *etc.*), ``Variable`` (type,
+    name & constness), ``Declaration`` (wrapping ``Variable``).
+  - New print methods in C99CodePrinter and FCodePrinter for printing
+    ``Type`` & ``Declaration`` (mapping 'float64' to 'double'/'type(0d0)'
+    in C/Fortran respectively).
+  - Since these will be new types they could be merged as a PR by the
+    end of week (perhaps marked as provisional to allow changing
+    without deprecatation cycle if needed later during the program).
+
+- Week 2:
+
+  - Implement precision controlled printing in C99CodePrinter, e.g.:
+    ``sinf``/``sin``/``sinl`` for all math functions in ``math.h``.
+  - Implement per printer instance header and library tracking.
+  - Implement precision controlled printing in FCodePrinter, e.g.:
+    ``cmplx(re, im, kind)``.
+
+- Week 3:
+
+  - Add new types to ``sympy.codegen.ast`` related to program flow,
+    *e.g.* ``While``, ``FunctionDefinition``, ``FunctionPrototype`` (for ``C``),
+    ``ReturnStatement``, ``PrinterSetting``, *etc.*
+  - Introduce a new module ``sympy.codegen.algorithms`` containing *e.g.*
+    Newton's method, fixed point iteration, *etc.*
+
+- Week 4:
+
+  - A new ``CodeGen``-like class using the new AST types & updated
+    printers.
+  - Support for `pybind11 <https://github.com/pybind/pybind11>`_ in
+    addition to ``Cython`` support.
+
+- Week 5:
+
+  - NIL
+  - Hand-in evaluations of Phase I.
+
+Phase II, 2017-07-01 – 2017-07-28
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The second phase will focus on providing new functionality to deal
+with rewriting of expressions to optimal forms when evaluated using
+finite precision arithmetics. Note that is not only something that
+SymPy's codeprinters could benefit from, but also the
+``LLVMDoubleVisistor`` in SymEngine.
+
+- Week 6:
+
+  - NIL
+
+- Week 6:
+
+  - NIL
+
+- Week 7:
+
+  - NIL
+
+- Week 8:
+
+  - NIL
+
+- Week 9
+
+  - NIL
+
+Phase III,  2017-07-29 – 2017-08-29
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Week 10
+
+  - NIL
+
+- Week 11
+
+  - NIL
+
+- Week 12
+
+  - NIL
+
+- Week 13
+
+  - NIL
+
+
+After GSoC
+~~~~~~~~~~
+I will resume my post-graduate studies and hopefully leverage the new
+code-generation facilities in future applied research projects.

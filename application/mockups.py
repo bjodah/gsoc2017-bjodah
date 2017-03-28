@@ -3,11 +3,14 @@ from __future__ import (absolute_import, division, print_function)
 from sympy import And, Gt, Lt, Abs, Dummy, oo, Tuple, cse
 from sympy.codegen.ast import Assignment, AddAugmentedAssignment, CodeBlock
 
-from printerdemo import (Declaration, PrintStatement, FunctionDefinition,
-                         While, Scope, ReturnStatement, MyPrinter, Declaration, PrinterSetting)
+from printerdemo import (
+    Declaration, PrintStatement, FunctionDefinition, While, Scope, ReturnStatement,
+    Declaration, PrinterSetting, MyPrinter as CPrinter
+)
+
 
 def my_ccode(expr, **kwargs):
-    return MyPrinter(**kwargs).doprint(expr)
+    return CPrinter(**kwargs).doprint(expr)
 
 
 def newton_raphson_algorithm(expr, wrt, atol=1e-12, delta=None, debug=False,

@@ -1,5 +1,6 @@
 from __future__ import (absolute_import, division, print_function)
 
+from functools import wraps
 from math import ceil, log10
 import numpy as np
 from sympy.core import S, AtomicExpr
@@ -15,7 +16,27 @@ _float_lim = ceil(-log10(np.finfo(np.float32).eps))
 _double_lim = ceil(-log10(np.finfo(np.float64).eps))
 _long_double_lim = ceil(-log10(np.finfo(np.float128).eps))
 
+class requires(object):
+    def __init__(self, headers=None, libraries=None):
+        self._headers = headers or set()
+        self._libraries = libraries or set()
+
+    def __call__(self, meth):
+        @wraps(meth)
+        def _method_wrapper(self_, *args, **kwargs):
+            self_.headers.update(self._headers)
+            self_.libraries.update(self._libraries)
+            return meth(self_, *args, **kwargs)
+        return _method_wrapper
+
+
 class MyPrinter(C99CodePrinter):
+
+    def __init__(self, *args, **kwargs):
+        self.headers = set()
+        self.libraries = set()
+        super(MyPrinter, self).__init__(*args, **kwargs)
+
     def _print_Type(self, expr):
         type_name, = expr.args
         if type_name in ('intc', 'integer'):
@@ -97,6 +118,7 @@ class MyPrinter(C99CodePrinter):
             raise NotImplementedError("Need a higher precision datatype.")
         return suffix
 
+    @requires({'math.h'}, {'m'})
     def _print_math_func(self, expr):
         known = known_functions_C99[expr.__class__.__name__]
         if not isinstance(known, str):
