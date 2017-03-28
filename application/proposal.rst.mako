@@ -13,7 +13,7 @@ About me
 +---------------+----------------------------------------------------------------+
 |Email          |`bjodah@gmail.com <bjodah@gmail.com>`_                          |
 +---------------+----------------------------------------------------------------+
-|University     |`KTH Royal Institute of Technology <http://www.kth.se>`_,       |
+|University     |`KTH Royal Institute of Technology <http://www.kth.se/en>`_,    |
 |               |Stockholm, Sweden                                               |
 +---------------+----------------------------------------------------------------+
 |Program        |PhD-student, project: Modelling interfacial radiation chemistry |
@@ -52,8 +52,9 @@ as their primary backend for solving `initial value problems
 <https://en.wikipedia.org/wiki/Initial_value_problem>`_ (IVPs) for 
 `systems of ordinary differential equations (ODE systems)
 <https://en.wikipedia.org/wiki/Ordinary_differential_equation#System_of_ODEs>`_
-and systems of nonlinear equations respectively (`example
-<https://en.wikipedia.org/wiki/Gradient_descent#Solution_of_a_non-linear_system>`_): 
+and `systems of nonlinear equations
+<https://en.wikipedia.org/wiki/Gradient_descent#Solution_of_a_non-linear_system>`_
+respectively:2
 
 - `pyodesys`_: Solving IVPs for systems of ODEs
 - `pyneqsys`_: Solving (possibly overdetermined) noninear systems by optimization.
@@ -61,8 +62,9 @@ and systems of nonlinear equations respectively (`example
 I have been using SymPy to do code-generation in various domain
 specific projects: 
 
-- `ChemPy <https://github.com/bjodah/chempy>`_: solving chemical equilibria
-  and kinetics using `pyodesys`_ & `pyneqsys`_
+- `ChemPy <https://github.com/bjodah/chempy>`_: solving problems in
+  chemical kinetics and equilibria using `pyodesys`_ and `pyneqsys`_
+  respectively.
 - `mdiosvcor <https://github.com/bjodah/mdiosvcor>`_ - Molecular
   Dynamics Ion Solvation Correction terms (using a `patched version`_ of
   ``sympy.utilities.autowrap``)
@@ -80,7 +82,7 @@ specific projects:
 Time commitment
 ~~~~~~~~~~~~~~~
 If accepted, I will have no other commitments, meaning that I will be
-avaiable at least 40 h/week during the program. Any shorter vaccation
+avaiable 40 h/week during the program. Any shorter vaccation
 will, in addition to being coordinated with the mentor, be compensated
 in advance e.g. by working 50 h/week during 4 weeks leading up to 1
 week of vaccation. I will hopefully spend one week at the SciPy 2017
@@ -91,38 +93,24 @@ code-sprints. This time will therefore go directly into the project.
 Synopsis
 --------
 The code-generation facilities in SymPy are already in active use in
-the research community. There are, however, still many great
+the research community. There are, however, still many exciting
 opportunities for further improvements. As a CAS, SymPy has access to
 far more information than a compiler processing typical source code in
 languages such C/C++/Fortran. SymPy uses arbitrary precision
-arithmetics which avoids problems such as overflow (integer and
-floating point), loss of significance *etc.* High performance code
-relies on `floating-point arithmetic
+arithmetics which means that the size and precision of numbers
+represented are only limited by the amount of memory the computer has
+accesess too. However, operations with arbitrary precision are
+inherently slow, which is why high performance code relies on
+`floating-point arithmetic
 <https://en.wikipedia.org/wiki/Floating-point_arithmetic>`_ (which has
 `dedicated hardwarde
 <https://en.wikipedia.org/wiki/Floating-point_unit>`_ in modern CPUs),
 therefore, any code generation for a programming language which maps
 mathematical expressions to finite precision floating point
 instructions, would benefit greatly if that code-generation was made
-in such a way to minimize `precision loss
+in such a way to minimize `loss of significance
 <https://en.wikipedia.org/wiki/Loss_of_significance>`_, risk of
 under-/overflow *etc.*
-
-The current code-generation facilities are spread out over:
-
-- ``CodePrinter`` and its subclasses in the ``sympy.printing``
-  subpackage
-- ``CodeGen`` and its related classes in ``sympy.utilities.codegen``.
-- Types for abstract syntax tree (AST) generation in
-  ``sympy.codegen.ast`` and related langauge specific types in
-  ``sympy.codegen.cfunctions`` and ``sympy.codegen.ffunctions`` (for C-
-  and Fortran-functions respectively).
-
-Ideally the ``CodePrinter`` subclasses should only deal with
-expressing the AST types as valid code in their respective languages.
-Any re-ordering of expressions or transformations from one node type
-to another should be performed by other classes prior to reaching the
-printers.
 
 Code printers
 -------------
@@ -132,6 +120,22 @@ offer considerable performance advantages compared to pure Python.
 
 Current status
 ~~~~~~~~~~~~~~
+The current code-generation facilities are spread out over:
+
+- ``CodePrinter`` and its subclasses in the ``sympy.printing``
+  subpackage.
+- ``CodeGen`` and its related classes in ``sympy.utilities.codegen``.
+- Types for abstract syntax tree (AST) generation in
+  ``sympy.codegen.ast`` and related langauge specific types in
+  ``sympy.codegen.cfunctions`` and ``sympy.codegen.ffunctions`` (for C-
+  and Fortran-functions respectively).
+
+Ideally the ``CodePrinter`` subclasses should only deal with
+expressing the AST types as valid code in their respective languages.
+Any manipulation of the AST — such as re-ordering or transformations
+from one node type to another — should preferably be performed by
+other classes prior to reaching the printers.
+
 Currently the code printers in the language specific modules under
 ``sympy.printing`` are geard towards generating inline expressions,
 *e.g.*:
@@ -166,8 +170,7 @@ statement instead of an expression:
             y = x**2
          end if
 
-
-this in itself is not a problem, however the way it is implemented now
+this in itself is not a problem, but the way it is implemented now
 is that there is a special case to handle ``Piecewise`` in the printing of
 ``Assignment``. This approach fails when we want to print nested
 statements (*e.g.* a loop with conditional exit containing an if-statement).
@@ -179,21 +182,23 @@ method does not use the visitor pattern, instead it handles different types
 through ``if``-statements which makes it hard to use with expressions containing
 user defined classes. Also the ``CCodeGen`` class hard-codes (at least in a
 method which may be overloaded) what headers to include. The notion of types in
-``sympy.utilities.codegen`` is also somewhat confusing (there is no easy way
-to use the binary32 IEEE 754 floating point data type for example).
+``sympy.utilities.codegen`` is also somewhat confusing: *e.g.* there is no easy way
+to use the binary32 IEEE 754 floating point data type.
 
 Proposed improvements
 ~~~~~~~~~~~~~~~~~~~~~
 In ``sympy.codegen.ast`` there are building blocks for representing an
-abstract syntax tree. This module should be extended by adding more node
-types. It would allow the either the current ``codegen`` facilities to gradually
-be migrated to use the ``sympy.codegen.ast`` module or (if backward incompatiblity
-issues prove to be substantial) introduce a new codeprinter using these facilities.
+abstract syntax tree. This module should be extended by adding more
+node types. It would allow the current ``codegen`` facilities to
+gradually be migrated to use the ``sympy.codegen.ast`` module, or (if
+backward incompatiblity issues prove to be substantial) introduce a
+new codeprinter using these facilities.
 
-A new module: ``sympy.codegen.algorithms``, should be created, containg common algorithms
-which are often rewritten today in every new project. This module would leverage the to-be-written
-classes in ``sympy.codegen.ast``. Let's consider the Newton-Rhapson method as a
-case (this is working — but unpolished — code to convey the point):
+A new module: ``sympy.codegen.algorithms``, could be created,
+containg common algorithms which are often rewritten today in every
+new project. This module would leverage the to-be-written classes in
+``sympy.codegen.ast``. Let us consider the Newton-Rhapson method as a
+case study (this is actual working prototype code):
 
 .. code:: python
 
@@ -208,8 +213,9 @@ case (this is working — but unpolished — code to convey the point):
       x += dx;
    }
 
-this and related algorithms, for example (modifed) newton method for non-linear systems
-could be of great value for users writing applied code.
+this and related algorithms, for example (modifed) newton method for
+non-linear systems could be of great value for users writing applied
+code.
 
 A popular feature of SymPy is common subexpresison elimination (CSE),
 currently the code printers are not catered to deal with these in an
@@ -245,13 +251,14 @@ where cse variables have their type deteremined automatically:
       ));
    }
    
-note that when using ``C++11`` as target language we may choose to
-declare CSE variables ``auto`` which leaves type-deduction to the
-compiler.
+when using ``C++11`` as target language we may choose to declare CSE
+variables ``auto`` which leaves type-deduction to the compiler. Note
+that the ``assign_cse`` prototype addresses a large part of `gh-11038
+<https://github.com/sympy/sympy/issues/11038>`_.
 
 Currently the printers do not track what methods have been called.
 It would be useful if C-code printers kept a per instance set of
-header files (and libraries) needed, *e.g.*:
+headers and libraries used, *e.g.*:
 
 .. code:: python
 
@@ -276,10 +283,15 @@ longer be required.
 
 Finite precision arithmetics
 ----------------------------
-Currently there is only rudimentary facilities to deal with precision in the codeprinters
-(the current implementation essentially only deals with the number of decimals printed for
-number constants). The new ```sympy.codegen.algorithms``` modeule should leave the decision
-of requires precision to the user, revisiting the ``newton_raphson_algorithm`` example:
+Currently there is only rudimentary facilities to deal with precision
+in the codeprinters (the current implementation essentially only deals
+with the number of decimals printed for number constants). But even
+for number literals consistency is lacking (see e.g. gh-11803_ where
+``long double`` literals are used by default).
+
+The new ``sympy.codegen.algorithms`` modeule should leave the decision
+of required precision to the user, revisiting the
+``newton_raphson_algorithm`` example:
 
 .. code:: python
 
@@ -290,14 +302,19 @@ of requires precision to the user, revisiting the ``newton_raphson_algorithm`` e
       x += dx;
    }
 
-Note how our lowered precision affected what function calls that were generated (``fabsf``,
-``powf``, ``cosf`` & ``sinf``). It should be noted that ``C++`` already allows the user to
-write type-generic code, but still today all platforms support ``C++``, and for those platforms
-the conveninece of generating code based precision can greatly reduce the manual labour of
-rewriting the expressions. The magnitude for the choice of atol inherently depends on
-the machine epsilon for the underlying data type, it would therefore
-be convinient if there existed a node type which can reference the the
-printer settings:
+Note how our lowered precision affected what functions got used
+(``fabsf``, ``powf``, ``cosf`` & ``sinf``). It should be noted that
+``C++`` already allows the user to write type-generic code, but still
+today not all platforms support ``C++``, and for those platforms the
+convenience of generating code based no precision can greatly reduce the
+manual labor of rewriting the expressions.
+
+When we generate different code depending on a printer-setting it is
+beneficial if that choice is available to the nodes in AST during
+printing. For example, the magnitude for the choice of ``atol`` inherently
+depends on the machine epsilon for the underlying data type. By
+introducing a special node type which reads the settings we can a
+quite elegant manner solve this:
 
 .. code:: python
 
@@ -311,6 +328,27 @@ printer settings:
       x += dx;
    }
 
+<%!
+    from subprocess import getoutput
+    gcc_version = getoutput('gcc --version').split('\n')[0].split()[-2]
+%>
+
+if you are worried about the ``pow(10, 1 - 15)`` call, don't be, let
+us look at the assembly generated by gcc ${gcc_version}:
+
+.. code:: bash
+
+   ${'   '.join(open("pow_num.sh").readlines())}
+
+running the above script:
+
+.. code:: bash
+          
+   $ ./pow_num.sh
+   ${'   '.join(open("pow_num.out").readlines())}
+
+which means that the generated assembly was identical (even with no
+optimizations turned on).
 
 Making the code printers aware of precision would also allow for for
 more correct results by transforming the expression into its most
@@ -363,27 +401,6 @@ to simplify the 32-bit version not to include the ``exp(y)`` term
 (which would have no effect on the finite precision expression due to
 shifting). 
 
-In many algortihms (especially iteraitve ones) a computationally
-cheaper approximation of an expression often works just as well but
-offers an opportunity for faster convergence saving both time and
-energy.
-
-A very common situtation in numerical codes is that the majority of
-CPU cycles are spent solving linear systems of equations. For large
-systems direct methods (*e.g.* LU decomposition) becomes prohibitively
-expensive due to cubic algorithm complexity. The remedy is to rely on
-iterative methods (*e.g.* GMRES), but these require good
-preconditioners (unless the problem is notoriously diagonally
-dominant). A good preconditioner can be constructed from an
-approxiamtion of the inverse of the matrix describing the linear system.
-
-A potentially very interesting idea would be to generate a
-symbolic approximation of *e.g.* the LU decomposition of a matrix, and
-when that approximate LU decomposition is sparse (in general sparse
-matrices have dense LU decompositions due to fill-in), the
-approximation could then be used to generate tailored preconditioners
-based only on knowledge on expected magnitude of variables.
-
 Another area of possible improvements is rewriting of expresisons to
 avoid under-/over-flow, consider *e.g.*:
 
@@ -421,6 +438,53 @@ illustrates the dangers of finite precision arithmetics.
 In this particular case, the expression could be rewritten
 as:
 
+.. code:: python
+
+   >>> pass  # TODO
+
+In many algortihms (especially iteraitve ones) a computationally
+cheaper approximation of an expression often works just as well but
+offers an opportunity for faster convergence saving both time and
+energy.
+
+A very common situtation in numerical codes is that the majority of
+CPU cycles are spent solving linear systems of equations. For large
+systems direct methods (*e.g.* LU decomposition) becomes prohibitively
+expensive due to cubic algorithm complexity. The remedy is to rely on
+iterative methods (*e.g.* GMRES), but these require good
+preconditioners (unless the problem is very diagonally
+dominant). A good preconditioner can be constructed from an
+approxiamtion of the inverse of the matrix describing the linear system.
+
+A potentially very interesting idea would be to generate a
+symbolic approximation of *e.g.* the LU decomposition of a matrix, and
+when that approximate LU decomposition is sparse (in general sparse
+matrices have dense LU decompositions due to fill-in), the
+approximation would then provide a tailored preconditioner
+(based on assumptions about variable magnitudes).
+
+Writing a preconditioner factory and evaluating it would be a too big
+undertaking during the program. However, providing necessary
+code-generation utilities (a symbolic version of incomplete
+LU-decomposition) could provide a good design target for the
+functions which are to be made finite-precision-aware.
+
+Various related improvements
+----------------------------
+In case of the above projects turning out to be under-scoped, then
+here are some code-generation & printing related issues I would like
+to address during the GSoC program (ordered after descending
+priority):
+
+- `symengine.py #112
+  <https://github.com/symengine/symengine.py/pull/112>`_: ``Lambdify``
+  in SymEngine should work for heterogeneous input and without
+  performance loss (still work to be done).
+-  Support cse in the ``codegen`` module ()
+- 
+- A ``CodePrinter`` subclass for Python should be introduced. `gh- <>`_
+
+
 Timeline
 --------
 Below is a proposed schedule for the program.
@@ -454,13 +518,15 @@ improvements to mainly existing infrastructure in SymPy.
     ``Type`` & ``Declaration`` (mapping 'float64' to 'double'/'type(0d0)'
     in C/Fortran respectively).
   - Since these will be new types they could be merged as a PR by the
-    end of week (perhaps marked as provisional to allow changing
+    end of the week (perhaps marked as provisional to allow changing
     without deprecatation cycle if needed later during the program).
 
 - Week 2:
 
   - Implement precision controlled printing in C99CodePrinter, e.g.:
     ``sinf``/``sin``/``sinl`` for all math functions in ``math.h``.
+  - Use literals consistent with choice of precision (``0.7F``,
+    ``0.7``, ``0.7L``) (resolves gh-11803_)
   - Implement per printer instance header and library tracking.
   - Implement precision controlled printing in FCodePrinter, e.g.:
     ``cmplx(re, im, kind)``.
@@ -537,3 +603,5 @@ After GSoC
 ~~~~~~~~~~
 I will resume my post-graduate studies and hopefully leverage the new
 code-generation facilities in future applied research projects.
+
+.. _gh-11803: https://github.com/sympy/sympy/issues/11803

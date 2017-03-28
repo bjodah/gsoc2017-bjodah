@@ -5,12 +5,12 @@ application/proposal.html
 .cache/
 application/style.css
 
+application/*.out
+
 # Latex files:
 application/proposal.aux
 application/proposal.log
-application/proposal.out
 application/proposal.pdf
 application/proposal.tex
 application/proposal.toc
 application/logsum
-application/logsum.out
