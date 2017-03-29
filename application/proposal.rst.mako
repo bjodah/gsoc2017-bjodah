@@ -203,19 +203,42 @@ case study (this is actual working prototype code):
 .. code:: python
 
    >>> from mockups import my_ccode, newton_raphson_algorithm
-   >>> x, dx, atol = sp.symbols('x dx atol')
-   >>> expr = sp.cos(x) - x**3
+   >>> x, k, dx, atol = sp.symbols('x k dx atol')
+   >>> expr = sp.cos(k*x) - x**3
    >>> algo = newton_raphson_algorithm(expr, x, atol, dx)
    >>> print(my_ccode(algo))
    double dx = INFINITY;
    while (fabs(dx) > atol) {
-      dx = (pow(x, 3) - cos(x))/(-3*pow(x, 2) - sin(x));
+      dx = (pow(x, 3) - cos(k*x))/(-k*sin(k*x) - 3*pow(x, 2));
       x += dx;
    }
 
 this and related algorithms, for example (modifed) newton method for
 non-linear systems could be of great value for users writing applied
 code.
+
+In order to relpace the current ``CodeGen`` classes we need to be able
+to generate function definitions from AST. It is important to note
+that user are often not in control over the signature of their
+implemented function when they implement callbacks for use in external
+libraries. Some arguments might be passed by reference, *e.g.*:
+
+.. code:: python
+
+   >>> from mockups import newton_raphson_function as newton_func, Pointer
+   >>> kp = Pointer(k, value_const=True, pointer_const=True)
+   >>> print(my_ccode(newton_func(expr, x, (x, kp))))
+   double newton(double x, const double * const k){
+      double d_x = INFINITY;
+      while (fabs(d_x) > 1.0e-12) {
+         d_x = (pow(x, 3) - cos((*k)*x))/(-(*k)*sin((*k)*x) - 3*pow(x, 2));
+         x += d_x;
+      }
+      return x;
+   }
+
+In the final implementation we may want to declare a ``const k_ = *k``
+at function entry for better brevity.
 
 A popular feature of SymPy is common subexpresison elimination (CSE),
 currently the code printers are not catered to deal with these in an
@@ -253,8 +276,7 @@ where cse variables have their type deteremined automatically:
    
 when using ``C++11`` as target language we may choose to declare CSE
 variables ``auto`` which leaves type-deduction to the compiler. Note
-that the ``assign_cse`` prototype addresses a large part of `gh-11038
-<https://github.com/sympy/sympy/issues/11038>`_.
+that the ``assign_cse`` prototype addresses a large part of gh-11038_.
 
 Currently the printers do not track what methods have been called.
 It would be useful if C-code printers kept a per instance set of
@@ -298,7 +320,7 @@ of required precision to the user, revisiting the
    >>> print(my_ccode(algo, settings={'precision': 7}))
    float dx = INFINITY;
    while (fabsf(dx) > atol) {
-      dx = (powf(x, 3) - cosf(x))/(-3*powf(x, 2) - sinf(x));
+      dx = (powf(x, 3) - cosf(k*x))/(-k*sinf(k*x) - 3*powf(x, 2));
       x += dx;
    }
 
@@ -324,7 +346,7 @@ quite elegant manner solve this:
    >>> print(my_ccode(algo2, settings={'precision': 15}))
    double dx = INFINITY;
    while (fabs(dx) > pow(10, 1 - 15)) {
-      dx = (pow(x, 3) - cos(x))/(-3*pow(x, 2) - sin(x));
+      dx = (pow(x, 3) - cos(k*x))/(-k*sin(k*x) - 3*pow(x, 2));
       x += dx;
    }
 
@@ -400,6 +422,11 @@ machine epsilon values of :math:`2^{-53}` and :math:`2^{-24}` in order
 to simplify the 32-bit version not to include the ``exp(y)`` term
 (which would have no effect on the finite precision expression due to
 shifting). 
+
+Today `boost <http://www.boost.org>`_ offer classes to work with
+multiprecision numbers in C++. A new C++ code printer class for
+working with these classes should be provided
+(``boost::multiprecision::cpp_dec_float_50`` *etc.*).
 
 Another area of possible improvements is rewriting of expresisons to
 avoid under-/over-flow, consider *e.g.*:
@@ -480,9 +507,9 @@ priority):
   <https://github.com/symengine/symengine.py/pull/112>`_: ``Lambdify``
   in SymEngine should work for heterogeneous input and without
   performance loss (still work to be done).
--  Support cse in the ``codegen`` module ()
-- 
-- A ``CodePrinter`` subclass for Python should be introduced. `gh- <>`_
+- Support cse in the ``codegen`` module ()
+- Add functions from ``complex.h`` to ``C99CodePrinter``
+- Add a ``C11CodePrinter`` with complex number construction macros.
 
 
 Timeline
@@ -517,9 +544,6 @@ improvements to mainly existing infrastructure in SymPy.
   - New print methods in C99CodePrinter and FCodePrinter for printing
     ``Type`` & ``Declaration`` (mapping 'float64' to 'double'/'type(0d0)'
     in C/Fortran respectively).
-  - Since these will be new types they could be merged as a PR by the
-    end of the week (perhaps marked as provisional to allow changing
-    without deprecatation cycle if needed later during the program).
 
 - Week 2:
 
@@ -528,28 +552,41 @@ improvements to mainly existing infrastructure in SymPy.
   - Use literals consistent with choice of precision (``0.7F``,
     ``0.7``, ``0.7L``) (resolves gh-11803_)
   - Implement per printer instance header and library tracking.
-  - Implement precision controlled printing in FCodePrinter, e.g.:
-    ``cmplx(re, im, kind)``.
+  - Add a setting to the CCodePrinters wether to use math macros (they
+    are not required by the standard), and when in use, use them more
+    extensively.
 
 - Week 3:
 
-  - Add new types to ``sympy.codegen.ast`` related to program flow,
-    *e.g.* ``While``, ``FunctionDefinition``, ``FunctionPrototype`` (for ``C``),
-    ``ReturnStatement``, ``PrinterSetting``, *etc.*
-  - Introduce a new module ``sympy.codegen.algorithms`` containing *e.g.*
-    Newton's method, fixed point iteration, *etc.*
+  - Add C99 & C11 `complex math functions
+    <http://en.cppreference.com/w/c/numeric/complex>`_ to the C-code
+    printers. 
+  - Implement precision controlled printing in FCodePrinter, e.g.:
+    ``cmplx(re, im, kind)``.
+  - Add support for ``boost::multiprecision`` in a new
+    ``CXX11CodePrinter`` subclass.
 
 - Week 4:
 
-  - A new ``CodeGen``-like class using the new AST types & updated
-    printers.
-  - Support for `pybind11 <https://github.com/pybind/pybind11>`_ in
-    addition to ``Cython`` support.
+  - Add new types to ``sympy.codegen.ast`` related to program flow,
+    *e.g.* ``While``, ``FunctionDefinition``, ``FunctionPrototype``
+    (for ``C``), ``ReturnStatement``, ``PrinterSetting``, *etc.*
+  - Introduce a new module ``sympy.codegen.algorithms`` containing *e.g.*
+    Newton's method, fixed point iteration, *etc.*
+  - Handle special function definition attributes in C/C++/Fortran
+    *e.g.* static/constexpr/bind(c)
 
 - Week 5:
 
-  - NIL
-  - Hand-in evaluations of Phase I.
+  - Write a Python code printer class using the new.
+    (addresses gh-12213_)
+  - Since Phase I will largely be about adding new AST node types
+    they could be merged as a PR by the end of Phase I (or
+    incrementally during the Phase I). Perhaps marked as provisional
+    to allow changes without deprecatation cycle if needed later
+    during the program.
+  - Hand-in evaluation of Phase I.
+
 
 Phase II, 2017-07-01 – 2017-07-28
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -559,44 +596,43 @@ finite precision arithmetics. Note that is not only something that
 SymPy's codeprinters could benefit from, but also the
 ``LLVMDoubleVisistor`` in SymEngine.
 
-- Week 6:
+- Week 6-8:
 
-  - NIL
+  - A new ``CodeGen``-like class using the new AST types & updated
+    printers.
+  - Provide Fortran 2003 ISO C binding as an alternative to f2py wrappers.
+  - Support for `pybind11 <https://github.com/pybind/pybind11>`_ in
+    addition to ``Cython`` for autowrap functionality.
 
-- Week 6:
+- Week 9:
 
-  - NIL
-
-- Week 7:
-
-  - NIL
-
-- Week 8:
-
-  - NIL
-
-- Week 9
-
-  - NIL
+  - Phase II, will mostly focus on the new ``CodeGen`` class, during
+    this work, it is likely that the printers and ``codegen.ast``
+    modules have been updated. A PR with the new codegen class would
+    ideally be ready to merge at end of Phase II.
+  - Hand-in evaluation of Phase II.
 
 Phase III,  2017-07-29 – 2017-08-29
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The third phase will focus on providing expression rewriting
+facilities for significance preserving expressions. This ties into
+pattern matching, assumptions and simplification in SymPy. Different
+domains need different functions of this kind, the focus should
+therefore be to provide tooling for users to create their own
+functions. An often used technique is tabulation, polynomial
+interpolation and newton refinement. Based on the work in Phase I &
+II, SymPy will be very well equipped to aid in this process (table
+generation for different precisions, code for iterative refinement).
 
-- Week 10
+- Week 10 - 12:
 
-  - NIL
-
-- Week 11
-
-  - NIL
-
-- Week 12
-
-  - NIL
+  - Implemented the equivalent functionality of the ``smart_ccode``
+    example above.
+  - Utilities for tabulation.
 
 - Week 13
 
-  - NIL
+  - Final evaluation, fixes to documentation, addressing reviews.
 
 
 After GSoC
@@ -604,4 +640,6 @@ After GSoC
 I will resume my post-graduate studies and hopefully leverage the new
 code-generation facilities in future applied research projects.
 
+.. _gh-11038: https://github.com/sympy/sympy/issues/11038
 .. _gh-11803: https://github.com/sympy/sympy/issues/11803
+.. _gh-12213: https://github.com/sympy/sympy/issues/12213

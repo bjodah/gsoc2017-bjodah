@@ -1,11 +1,11 @@
 from __future__ import (absolute_import, division, print_function)
 
-from sympy import And, Gt, Lt, Abs, Dummy, oo, Tuple, cse
+from sympy import And, Gt, Lt, Abs, Dummy, oo, Tuple, cse, Symbol
 from sympy.codegen.ast import Assignment, AddAugmentedAssignment, CodeBlock
 
 from printerdemo import (
     Declaration, PrintStatement, FunctionDefinition, While, Scope, ReturnStatement,
-    Declaration, PrinterSetting, MyPrinter as CPrinter
+    Declaration, PrinterSetting, Variable, Pointer, MyPrinter as CPrinter
 )
 
 
@@ -41,17 +41,36 @@ def newton_raphson_algorithm(expr, wrt, atol=1e-12, delta=None, debug=False,
         body.append(AddAugmentedAssignment(counter, 1))
         req = And(req, Lt(counter, itermax))
     whl = While(req, CodeBlock(*body))
-    return Wrapper(CodeBlock(*declars, whl))
+    blck = declars + [whl]
+    return Wrapper(CodeBlock(*blck))
 
+def _symbol_of(arg):
+    if isinstance(arg, (Variable, Pointer)):
+        return arg.symbol
+    else:
+        return arg
 
-def newton_raphson_function(expr, wrt, func_name="newton", **kwargs):
-    algo = newton_raphson_algorithm(expr, wrt, **kwargs)
+def newton_raphson_function(expr, wrt, args=None, func_name="newton", **kwargs):
+    if args is None:
+        args = (wrt,)
+    pointer_subs = {p.symbol: Symbol('(*%s)' % p.symbol.name)
+                    for p in args if isinstance(p, Pointer)}
+    delta = kwargs.pop('delta', None)
+    if delta is None:
+        delta = Symbol('d_' + wrt.name)
+        if expr.has(delta):
+            delta = None  # will use Dummy
+    algo = newton_raphson_algorithm(expr, wrt, delta=delta, **kwargs).xreplace(pointer_subs)
     if isinstance(algo, Scope):
         algo, = algo.args
-    return FunctionDefinition("real", func_name, (wrt,), CodeBlock(algo, ReturnStatement(wrt)))
+    not_in_args = expr.free_symbols.difference(set(_symbol_of(arg) for arg in args))
+    if not_in_args:
+        raise ValueError("Missing symbols in args: %s" % ', '.join(map(str, not_in_args)))
+    return FunctionDefinition("real", func_name, args, CodeBlock(algo, ReturnStatement(wrt)))
 
 
 def assign_cse(target, expr):
     cses, (new_expr,) = cse(expr)
     cse_declars = [Declaration(*args, const=True) for args in cses]
-    return Scope(CodeBlock(*cse_declars, Assignment(target, new_expr)))
+    blck = cse_declars + [Assignment(target, new_expr)]
+    return Scope(CodeBlock(*blck))

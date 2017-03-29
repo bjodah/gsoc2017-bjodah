@@ -1,11 +1,11 @@
-application/proposal.rst
-application/proposal.html
+**.pyc
 **.ipynb_checkpoints/
 **__pycache__/
 .cache/
-application/style.css
-
 application/*.out
+application/proposal.rst
+application/proposal.html
+application/style.css
 
 # Latex files:
 application/proposal.aux

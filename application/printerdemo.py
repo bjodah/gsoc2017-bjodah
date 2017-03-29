@@ -68,7 +68,7 @@ class MyPrinter(C99CodePrinter):
     def _print_Declaration(self, expr):
         var, value = expr.args
         if isinstance(var, Pointer):
-            result = '{vc}{t} * {s}{pc}{r}'.format(
+            result = '{vc}{t} *{pc} {s}{r}'.format(
                 vc='const ' if var.value_const else '',
                 t=self._print(var.type),
                 s=self._print(var.symbol),
@@ -93,8 +93,8 @@ class MyPrinter(C99CodePrinter):
 
     def _print_FunctionPrototype(self, expr):
         return_type, name, input_types = expr.args
-        return "%s %s(%s)" % (*map(self._print, (return_type, name)),
-                              ', '.join(map(self._print, input_types)))
+        return "%s %s(%s)" % tuple(map(self._print, (return_type, name)),
+                                   ', '.join(map(self._print, input_types)))
 
     def _print_FunctionDefinition(self, expr):
         return_type, name, inputs, body = expr.args
@@ -248,7 +248,7 @@ class Pointer(Basic):
     def __new__(cls, symbol, type_=None, value_const=False, pointer_const=False, restrict=False):
         if type_ is None:
             type_ = _type_from_expr(symbol)
-        return Basic.__new__(cls, symbol, typ_, value_const, pointer_const, restrict)
+        return Basic.__new__(cls, symbol, type_, value_const, pointer_const, restrict)
 
     @property
     def symbol(self):
