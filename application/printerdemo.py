@@ -3,8 +3,9 @@ from __future__ import (absolute_import, division, print_function)
 from functools import wraps
 from math import ceil, log10
 import numpy as np
-from sympy.core import S, AtomicExpr
+from sympy.core import S, AtomicExpr, Integer
 from sympy.printing.ccode import C99CodePrinter, known_functions_C99
+from sympy.printing.cxxcode import CXX11CodePrinter
 from sympy.printing.precedence import precedence
 
 from sympy.core.basic import Basic
@@ -91,6 +92,9 @@ class MyPrinter(C99CodePrinter):
         fmtstr, iterable = expr.args
         return 'printf("%s", %s);' % (fmtstr, ', '.join(map(self._print, iterable)))
 
+    def _print_FunctionCall(self, expr):
+        return '%s(%s)' % (expr.args[0], ', '.join(map(self._print, expr.args[1:])))
+
     def _print_FunctionPrototype(self, expr):
         return_type, name, input_types = expr.args
         return "%s %s(%s)" % tuple(map(self._print, (return_type, name)),
@@ -162,6 +166,14 @@ class MyPrinter(C99CodePrinter):
 
     def _print_PrinterSetting(self, expr):
         return str(self._settings[expr.args[0]])
+
+    @requires({'stdbool.h'})
+    def _print_BooleanTrue(self, expr):
+        return 'true'
+
+    @requires({'stdbool.h'})
+    def _print_BooleanFalse(self, expr):
+        return 'false'
 
 
 class While(Basic):
@@ -306,3 +318,31 @@ class PrinterSetting(AtomicExpr):
 
 class ReturnStatement(Basic):
     pass
+
+class FunctionCall(Basic):
+    """ name, *args """
+    pass
+
+class BoostMPCXXPrinter(CXX11CodePrinter):
+
+    _default_settings = dict(CXX11CodePrinter._default_settings, mp_int=False)
+
+    def __init__(self, *args, **kwargs):
+        self.headers = set()
+        self.libraries = set()
+        self.using = set()
+        super(BoostMPCXXPrinter, self).__init__(*args, **kwargs)
+
+    def _print_Integer(self, expr):
+        if self._settings.get('mp_int'):
+            self.using.add('boost::multiprecision::cpp_int')
+            return 'cpp_int("%s")' % hex(expr)
+        return super(BoostMPCXXPrinter, self)._print_Integer(self, expr)
+
+    @requires({'boost/multiprecision/cpp_int.hpp'})
+    def _print_Rational(self, expr):
+        if self._settings.get('mp_int'):
+            self.using.add('boost::multiprecision::cpp_rational')
+            return 'cpp_rational(%s, %s)' % tuple(map(self._print, map(Integer, (expr.p, expr.q))))
+        else:
+            return super(BoostMPCXXPrinter, self)._print_Rational(self, expr)

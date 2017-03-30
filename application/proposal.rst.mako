@@ -24,7 +24,7 @@ About me
 +---------------+----------------------------------------------------------------+
 |Time-zone      |UTC+01:00                                                       |
 +---------------+----------------------------------------------------------------+
-|Phone          |Will be provided upon request                                   |
+|Phone          |Will be provided                                                |
 +---------------+----------------------------------------------------------------+
 
 Background
@@ -426,10 +426,33 @@ shifting).
 Today `boost <http://www.boost.org>`_ offer classes to work with
 multiprecision numbers in C++. A new C++ code printer class for
 working with these classes should be provided
-(``boost::multiprecision::cpp_dec_float_50`` *etc.*).
+(``boost::multiprecision::cpp_dec_float_50`` *etc.*). Currently the
+code printers in SymPy assumes that the user is mainly interested in
+floating point arithmetics. Consider *e.g.*:
+
+.. code:: python
+
+   >>> r = sp.Rational(10**20 + 1, 10**20)
+   >>> m = sp.Symbol('m', integer=True)
+   >>> sp.ccode(r - m)
+   '-m + 100000000000000000001.0L/100000000000000000000.0L'
+
+if ``m == 1`` the above expression will be rounded to zero, a boost
+printer could have a setting enabling printing of ``Rational`` as
+``cpp_rational``:
+
+.. code:: python
+
+   >>> from mockups import BoostMPCXXPrinter
+   >>> mp_printer = BoostMPCXXPrinter(settings={'mp_int': True})
+   >>> mp_printer.doprint(r-m)
+   '-m + cpp_rational(cpp_int("0x56bc75e2d63100001"), cpp_int("0x56bc75e2d63100000"))'
+   >>> print(mp_printer.headers, sorted(mp_printer.using))
+   {'boost/multiprecision/cpp_int.hpp'} ['boost::multiprecision::cpp_int', 'boost::multiprecision::cpp_rational']
+
 
 Another area of possible improvements is rewriting of expresisons to
-avoid under-/over-flow, consider *e.g.*:
+avoid underflow and overflow, consider *e.g.*:
 
 .. code:: python
 

@@ -1,16 +1,21 @@
 from __future__ import (absolute_import, division, print_function)
 
-from sympy import And, Gt, Lt, Abs, Dummy, oo, Tuple, cse, Symbol
+from sympy import And, Gt, Lt, Abs, Dummy, oo, Tuple, cse, Symbol, Function
 from sympy.codegen.ast import Assignment, AddAugmentedAssignment, CodeBlock
 
 from printerdemo import (
     Declaration, PrintStatement, FunctionDefinition, While, Scope, ReturnStatement,
-    Declaration, PrinterSetting, Variable, Pointer, MyPrinter as CPrinter
+    Declaration, PrinterSetting, Variable, Pointer, BoostMPCXXPrinter,
+    MyPrinter as CPrinter
 )
 
 
 def my_ccode(expr, **kwargs):
     return CPrinter(**kwargs).doprint(expr)
+
+
+def boost_cxx_code(expr, **kwargs):
+    return BoostMPCXXPrinter(settings=kwargs).doprint(expr)
 
 
 def newton_raphson_algorithm(expr, wrt, atol=1e-12, delta=None, debug=False,
@@ -43,6 +48,7 @@ def newton_raphson_algorithm(expr, wrt, atol=1e-12, delta=None, debug=False,
     whl = While(req, CodeBlock(*body))
     blck = declars + [whl]
     return Wrapper(CodeBlock(*blck))
+
 
 def _symbol_of(arg):
     if isinstance(arg, (Variable, Pointer)):
