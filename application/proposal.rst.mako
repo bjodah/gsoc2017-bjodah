@@ -113,11 +113,15 @@ in such a way to minimize `loss of significance
 <https://en.wikipedia.org/wiki/Loss_of_significance>`_, risk of
 under-/overflow *etc.*
 
-Code printers
--------------
+The source code for all the examples and some additional jupyter
+notebooks can be found at `<https://github.com/bjodah/gsoc2017-bjodah>`_.
+
+Improving ``sympy.codegen`` with more high-level abstractions
+-------------------------------------------------------------
 SymPy has facilities for generating code in other programming
-languages. Especially in statically typed compiled languages which
-offer considerable performance advantages compared to pure Python.
+languages (with a focus on statically typed and compiled languages
+which offer considerable performance advantages compared to pure
+Python).
 
 Current status
 ~~~~~~~~~~~~~~
@@ -157,9 +161,9 @@ Currently the code printers in the language specific modules under
 
 this works because C has a ternary operator, however, for Fortran
 earlier than Fortran 95 there is no ternary operator. The code printer
-base class has a work-around implemented for this, when we give the
-keyword argument ``assign_to`` the code printer can generate a
-statement instead of an expression:
+base-class has a work-around implemented for this, when we give the
+keyword argument ``assign_to`` the code printer can generate an
+assignment statement instead of an expression:
 
 .. code:: python
 
@@ -171,10 +175,10 @@ statement instead of an expression:
             y = x**2
          end if
 
-this in itself is not a problem, but the way it is implemented now
-is that there is a special case to handle ``Piecewise`` in the printing of
+this in itself not a problem, but the way it is currently implemented
+by handling ``Piecewise`` as a special case in the printing of
 ``Assignment``. This approach fails when we want to print nested
-statements (*e.g.* a loop with conditional exit containing an if-statement).
+statements (*e.g.* a loop with a conditional break).
 
 The module ``sympy.utilities.codegen`` currently offers the most complete
 functionality to generate complete functions. Its design however does not
@@ -184,22 +188,27 @@ through ``if``-statements which makes it hard to use with expressions containing
 user defined classes. Also the ``CCodeGen`` class hard-codes (at least in a
 method which may be overloaded) what headers to include. The notion of types in
 ``sympy.utilities.codegen`` is also somewhat confusing: *e.g.* there is no easy way
-to use the binary32 IEEE 754 floating point data type.
+to use the binary32 IEEE 754 floating point data type. The shortcoming
+in ``CodeGen`` stems from the fact that the printer have not provided
+the neccessary information (*e.g.* what headers have been used).
 
 Proposed improvements
 ~~~~~~~~~~~~~~~~~~~~~
 In ``sympy.codegen.ast`` there are building blocks for representing an
 abstract syntax tree. This module should be extended by adding more
-node types. It would allow the current ``codegen`` facilities to
+node types. 
+
+<%doc>It would allow the current ``codegen`` facilities to
 gradually be migrated to use the ``sympy.codegen.ast`` module, or (if
 backward incompatiblity issues prove to be substantial) introduce a
-new codeprinter using these facilities.
+new codeprinter using these facilities.</%doc>
 
 A new module: ``sympy.codegen.algorithms``, could be created,
-containg common algorithms which are often rewritten today in every
+containing common algorithms which are often rewritten today in every
 new project. This module would leverage the to-be-written classes in
 ``sympy.codegen.ast``. Let us consider the Newton-Rhapson method as a
-case study (this is actual working prototype code):
+case study (see `mockups.py
+<https://github.com/bjodah/gsoc2017-bjodah/tree/master/application/mockups.py>`_):
 
 .. code:: python
 
@@ -214,15 +223,13 @@ case study (this is actual working prototype code):
       x += dx;
    }
 
-this and related algorithms, for example (modifed) newton method for
-non-linear systems could be of great value for users writing applied
-code.
+this and related algorithms could be of great value for users writing
+applied code.
 
-In order to relpace the current ``CodeGen`` classes we need to be able
-to generate function definitions from AST. It is important to note
-that user are often not in control over the signature of their
-implemented function when they implement callbacks for use in external
-libraries. Some arguments might be passed by reference, *e.g.*:
+It is important to realize that user are often not in control over the
+signature of their implemented functions when they implement callbacks
+for use in external libraries. Some arguments might be passed by
+reference, *e.g.*: 
 
 .. code:: python
 
@@ -240,44 +247,6 @@ libraries. Some arguments might be passed by reference, *e.g.*:
 
 In the final implementation we may want to declare a ``const k_ = *k``
 at function entry for better brevity.
-
-A popular feature of SymPy is common subexpresison elimination (CSE),
-currently the code printers are not catered to deal with these in an
-optimal way. Consider e.g.: 
-
-.. code:: python
-
-   >>> pw2 = sp.Piecewise((2/(x + 1), sp.Lt(x, 1)), (sp.exp(1-x), True))
-   >>> cses, (new_expr,) = sp.cse(pw1 + pw2)
-   >>> print(cses)
-   [(x0, x < 1)]
-
-Currently the codeprinters don't know how to properly deal with
-booleans, this should be improved so that codeblocks can be generated
-where cse variables have their type deteremined automatically:
-
-.. code:: python
-
-   >>> from mockups import assign_cse
-   >>> print(my_ccode(assign_cse(y, pw1 + pw2)))
-   {
-      const _Bool x0 = x < 1;
-      y = ((x0) ? (
-         x
-      )
-      : (
-         pow(x, 2)
-      )) + ((x0) ? (
-         2/(x + 1)
-      )
-      : (
-         exp(-x + 1)
-      ));
-   }
-   
-when using ``C++11`` as target language we may choose to declare CSE
-variables ``auto`` which leaves type-deduction to the compiler. Note
-that the ``assign_cse`` prototype addresses a large part of gh-11038_.
 
 Currently the printers do not track what methods have been called.
 It would be useful if C-code printers kept a per instance set of
@@ -303,9 +272,52 @@ use those facilites. With the above behaviour (and neccesssary changes
 to the code-generator in addition to the code-printer) that would no
 longer be required.
 
+Better support for different types
+----------------------------------
+A popular feature of SymPy is common subexpresison elimination (CSE),
+currently the code printers are not catered to deal with these in an
+optimal way. Consider e.g.: 
+
+.. code:: python
+
+   >>> pw2 = sp.Piecewise((2/(x + 1), sp.Lt(x, 1)), (sp.exp(1-x), True))
+   >>> cses, (new_expr,) = sp.cse(pw1 + pw2)
+   >>> print(cses)
+   [(x0, x < 1)]
+
+Currently the codeprinters don't know how to properly deal with
+booleans, this should be improved so that codeblocks can be generated
+where cse variables have their type deteremined automatically:
+
+.. code:: python
+
+   >>> from mockups import assign_cse
+   >>> code_printer = CPrinter()
+   >>> print(code_printer.doprint(assign_cse(y, pw1 + pw2)))
+   {
+      const bool x0 = x < 1;
+      y = ((x0) ? (
+         x
+      )
+      : (
+         pow(x, 2)
+      )) + ((x0) ? (
+         2/(x + 1)
+      )
+      : (
+         exp(-x + 1)
+      ));
+   }
+   >>> print(code_printer.headers)
+   {'stdbool.h'}
+   
+when using ``C++11`` as target language we may choose to declare CSE
+variables ``auto`` which leaves type-deduction to the compiler. Note
+that the ``assign_cse`` prototype addresses a large part of gh-11038_.
+
 
 Finite precision arithmetics
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Currently there is only rudimentary facilities to deal with precision
 in the codeprinters (the current implementation essentially only deals
 with the number of decimals printed for number constants). But even
@@ -373,25 +385,37 @@ running the above script:
 which means that the generated assembly was identical (even with no
 optimizations turned on).
 
-Making the code printers aware of precision would also allow for for
-more correct results by transforming the expression into its most
-precision perserving form, consider *e.g.*:
+
+Optimizations
+-------------
+Prior to reaching the ``CodePrinters`` the user may want to apply
+transformations to their expressions/AST. Optimization here is
+context and may refer to more accurate precision, or better
+performance (often at the cost of lost significance).
+
+Sometimes performance and precision optimizations are not mutually
+exclusive, *e.g.*:
 
 .. code:: python
 
-   >>> sp.smart_ccode(2**x + log(x)/log(2))  # doctest: +SKIP
-   'exp2(x) + log2(x)'
+   >>> from sympy import log
+   >>> expr = 2**x + log(x)/log(2)
+   >>> from optimize import optimize, optims_base2
+   >>> optimize(expr, optims_base2)
+   exp2(x) + log2(x)
 
 here the C-code printer would use the ``exp2`` and ``log2`` functions from
 the C99 standard. Some transformations would only be beneficial if
-the magnitude of the variables are within some span, *e.g.*: 
+the magnitude of the variables are within some span (proof of concept
+code is still to be written for this transformation), *e.g.*: 
 
 .. code:: python
 
-   >>> smart_ccode((2*exp(x) - 2)*(3*exp(y) - 3), typically={x: And(-.1 < x, x < .1)})  # doctest: +SKIP
+   >>> smart_ccode((2*exp(x) - 2)*(3*exp(y) - 3),
+   ...     typically={x: And(-.1 < x, x < .1)})  # doctest: +SKIP
    '6*expm1(x)*(exp(y) - 1)'
 
-here the proposed printer would use `expm1
+Here the proposed printer would use `expm1
 <http://en.cppreference.com/w/c/numeric/math/expm1>`_ from the C99
 standard to avoid cancellation in the subtraction.
 
@@ -412,9 +436,9 @@ Here is a mock up of what a smart code printer could do:
 .. code:: python
 
    >>> knol = {sp.Gt(x + sp.log(1e-10), y)}
-   >>> sp.smart_ccode(expr, knowledge=knol, precision=15)  # doctest: +SKIP
+   >>> smart_ccode(expr, knowledge=knol, precision=15)  # doctest: +SKIP
    'exp(x) + exp(y)'
-   >>> sp.smart_ccode(expr, knowledge=knol, precision=7)  # doctest: +SKIP
+   >>> smart_ccode(expr, knowledge=knol, precision=7)  # doctest: +SKIP
    'expf(x)'
 
 above the smart code printer would use the fact that `IEEE 754
@@ -457,7 +481,6 @@ avoid underflow and overflow, consider *e.g.*:
 
 .. code:: python
 
-   >>> from sympy import log
    >>> logsum = log(exp(x) + exp(y))
    >>> str(logsum.subs({x: 800, y: -800}).evalf()).rstrip('0')
    '800.'
@@ -526,8 +549,8 @@ transformating subexpressions, one way is to use replace:
 .. code:: python
 
    >>> expr = (1 + x)/(2 + 3*log(exp(x) + exp(y)))
-   >>> from demologsumexp import rule_logsumexp_2terms
-   >>> expr.replace(*rule_logsumexp_2terms)
+   >>> from optimize import logsumexp_2terms_opt
+   >>> optimize(expr, [logsumexp_2terms_opt])
    (x + 1)/(3*log1p(exp(Min(x, y))) + 3*Max(x, y) + 2)
 
 but that is beside the point: what is important to realize here is

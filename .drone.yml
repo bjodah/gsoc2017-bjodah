@@ -8,6 +8,7 @@ build:
     - jupyter nbconvert --to=html --debug --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb
     - python3 -m pytest
     - cd -
+    - bash -ce '! grep "System Message:" application/*.html'
     - mkdir -p deploy/$CI_BRANCH
     - cp application/proposal.rst application/*.html application/*.pdf deploy/$CI_BRANCH
 

@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import (absolute_import, division, print_function)
+
 from functools import reduce
 from operator import add
 from sympy import log, exp, Function, Symbol, IndexedBase, Add, Min, Max
@@ -32,14 +35,3 @@ class logsumexp(Function):
             ReturnStatement(log1p(s) + x[n-1])
         )
         return FunctionDefinition("real", name, (x, n), body)
-
-rule_logsumexp_2terms = (
-    lambda l: (isinstance(l, log)
-               and isinstance(l.args[0], Add)
-               and len(l.args[0].args) == 2
-               and all(isinstance(t, exp) for t in l.args[0].args)),
-    lambda l: (
-        Max(*[e.args[0] for e in l.args[0].args]) +
-        log1p(exp(Min(*[e.args[0] for e in l.args[0].args])))
-    )
-)

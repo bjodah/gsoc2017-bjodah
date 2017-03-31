@@ -54,7 +54,8 @@ class MyPrinter(C99CodePrinter):
             else:
                 raise NotImplementedError()
         elif type_name == 'bool':
-            return '_Bool'
+            self.headers.add('stdbool.h')
+            return 'bool'
 
     def _print_While(self, expr):
         condition, body = map(self._print, expr.args)

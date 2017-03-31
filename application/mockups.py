@@ -1,6 +1,6 @@
 from __future__ import (absolute_import, division, print_function)
 
-from sympy import And, Gt, Lt, Abs, Dummy, oo, Tuple, cse, Symbol, Function
+from sympy import And, Gt, Lt, Abs, Dummy, oo, Tuple, cse, Symbol, Function, Pow
 from sympy.codegen.ast import Assignment, AddAugmentedAssignment, CodeBlock
 
 from printerdemo import (
