@@ -680,6 +680,8 @@ SymPy's codeprinters could benefit from, but also the
   - Provide Fortran 2003 ISO C binding as an alternative to f2py wrappers.
   - Support for `pybind11 <https://github.com/pybind/pybind11>`_ in
     addition to ``Cython`` for autowrap functionality.
+  - Attend the SciPy 2017 conference and get user feedback on
+    code-generation.
 
 - Week 9:
 
