@@ -1,3 +1,4 @@
+<%doc> -*- mode: rst; eval: (auto-fill-mode); eval: (flyspell-mode) -*- </%doc>
 .. ${'{0} eval: (read-only-mode) {0}'.format('-*-')}
 
 Improved code-generation facilities
@@ -518,6 +519,16 @@ actually that last expression should be written using ``log1p``:
    0.00000e+00
    >>> print('%.5e' % logsum.subs({x: 0, y: -99}).n(50))
    1.01122e-43
+
+here we did the rewriting manually. What we need however are rules for
+transformating subexpressions, one way is to use replace:
+
+.. code:: python
+
+   >>> expr = (1 + x)/(2 + 3*log(exp(x) + exp(y)))
+   >>> from demologsumexp import rule_logsumexp_2terms
+   >>> expr.replace(*rule_logsumexp_2terms)
+   (x + 1)/(3*log1p(exp(Min(x, y))) + 3*Max(x, y) + 2)
 
 but that is beside the point: what is important to realize here is
 that a good implementation contains a sorting step. Using ``Min`` and
