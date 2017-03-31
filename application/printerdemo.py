@@ -3,10 +3,11 @@ from __future__ import (absolute_import, division, print_function)
 from functools import wraps
 from math import ceil, log10
 import numpy as np
-from sympy.core import S, AtomicExpr, Integer
+from sympy.core import S, AtomicExpr, Integer, Symbol
 from sympy.printing.ccode import C99CodePrinter, known_functions_C99
 from sympy.printing.cxxcode import CXX11CodePrinter
 from sympy.printing.precedence import precedence
+from sympy.tensor.indexed import IndexedBase
 
 from sympy.core.basic import Basic
 header_requirements = {
@@ -63,9 +64,6 @@ class MyPrinter(C99CodePrinter):
         arg, = expr.args
         return '{\n%s\n}' % self._print(arg)
 
-    def _print_Variable(self):
-        return self._print(self.symbol)
-
     def _print_Declaration(self, expr):
         var, value = expr.args
         if isinstance(var, Pointer):
@@ -93,7 +91,8 @@ class MyPrinter(C99CodePrinter):
         return 'printf("%s", %s);' % (fmtstr, ', '.join(map(self._print, iterable)))
 
     def _print_FunctionCall(self, expr):
-        return '%s(%s)' % (expr.args[0], ', '.join(map(self._print, expr.args[1:])))
+        return '%s(%s)%s' % (expr.args[0], ', '.join(map(self._print, expr.args[1])),
+                             ';' if expr.args[2] else '')
 
     def _print_FunctionPrototype(self, expr):
         return_type, name, input_types = expr.args
@@ -175,6 +174,15 @@ class MyPrinter(C99CodePrinter):
     def _print_BooleanFalse(self, expr):
         return 'false'
 
+    def _print_Variable(self, expr):
+        return self._print(expr.symbol)
+
+    def _print_Pointer(self, expr):
+        return self._print(expr.symbol)
+
+    def _print_IndexedBase(self, expr):
+        return self._print(Pointer(expr.label))
+
 
 class While(Basic):
     """
@@ -225,13 +233,25 @@ class Type(Basic):
             raise ValueError("Unknown type: %s" % name)
         return Basic.__new__(cls, name)
 
-def _type_from_expr(expr):
-    if expr.is_integer:
-        return Type('integer')
-    elif expr.is_Relational:
-        return Type('bool')
+def _type_from_expr(expr, symb=None):
+    if symb is not None:
+        if symb.is_integer:
+            return Type('integer')
+        elif symb.is_complex:
+            return Type('complex')
+
+    if isinstance(expr, str):
+        return Type('real')  # default
     else:
-        return Type('real')
+        if isinstance(expr, (int, Integer)):
+            return Type('integer')
+        if isinstance(expr, Symbol) and expr.is_integer:
+            return Type('integer')
+        expr = S(expr)
+        if expr.is_Relational:
+            return Type('bool')
+        else:
+            return Type('real')
 
 
 class Variable(Basic):
@@ -254,6 +274,7 @@ class Variable(Basic):
     @property
     def const(self):
         return self.args[2]
+
 
 class Pointer(Basic):
     """ name, type, value_const, pointer_const, restrict"""
@@ -286,15 +307,20 @@ class Pointer(Basic):
 
 class Declaration(Basic):
     def __new__(cls, var, value=None, const=None):
-        if not isinstance(var, (Variable, Pointer)):
-            if value is not None:
-                type_ = _type_from_expr(S(value))
-            else:
-                type_ = None
-            var = Variable(var, type_, const)
-        else:
+        if isinstance(var, (Variable, Pointer)):
             if const is not None:
                 raise ValueError("Cannot change constness of an existing Variable/Pointer")
+        else:
+            if value is not None:
+                type_ = _type_from_expr(value, var)
+            else:
+                type_ = None
+
+            if isinstance(var, IndexedBase):
+                var = Pointer(var, type_, const)
+            else:
+                var = Variable(var, type_, const)
+
         return Basic.__new__(cls, var, value)
 
 
@@ -320,8 +346,10 @@ class ReturnStatement(Basic):
     pass
 
 class FunctionCall(Basic):
-    """ name, *args """
-    pass
+    """ name, args, statement """
+    def __new__(cls, name, args=(), statement=False):
+        return Basic.__new__(cls, name, args, statement)
+
 
 class BoostMPCXXPrinter(CXX11CodePrinter):
 

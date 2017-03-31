@@ -5,7 +5,7 @@ all: proposal.html proposal.pdf
 style.css: ../.binaries/cskeeters-rst2html-style.tar.bz2
 	tar xjmf $< --wildcards --strip-components=1 "*/$@"
 
-proposal.rst: proposal.rst.mako enmako.py logsum.out mockups.py printerdemo.py pow_num.out
+proposal.rst: proposal.rst.mako enmako.py logsum.out mockups.py printerdemo.py pow_num.out demologsumexp.py
 	python3 enmako.py $< -o $@
 	python3 -m doctest $@
 

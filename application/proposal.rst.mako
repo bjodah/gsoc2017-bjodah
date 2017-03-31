@@ -398,9 +398,9 @@ Consider the following code:
 
 .. code:: python
 
-   >>> import sympy as sp
+   >>> from sympy import exp
    >>> x, y = sp.symbols('x y')
-   >>> expr = sp.exp(x) + sp.exp(y)
+   >>> expr = exp(x) + exp(y)
    >>> sp.ccode(expr)
    'exp(x) + exp(y)'
 
@@ -456,8 +456,9 @@ avoid underflow and overflow, consider *e.g.*:
 
 .. code:: python
 
-   >>> logsum = sp.log(sp.exp(800) + sp.exp(-800))
-   >>> str(logsum.evalf()).rstrip('0')
+   >>> from sympy import log
+   >>> logsum = log(exp(x) + exp(y))
+   >>> str(logsum.subs({x: 800, y: -800}).evalf()).rstrip('0')
    '800.'
 
 there are a few hundred of zeros before the second term makes
@@ -467,10 +468,10 @@ looks like this:
 .. code:: python
 
    >>> print(sp.ccode(logsum))
-   log(exp(-800) + exp(800))
+   log(exp(x) + exp(y))
 
-compiling that expression as a C program (and inspecting for floating
-point exceptions):
+compiling that expression as a C program with values 800 and -800 for
+x and y respectively (and inspecting for floating point exceptions):
 
 .. code:: C
 
@@ -485,12 +486,65 @@ and running that:
    ${'   '.join(open("logsum.out").readlines())}
 
 illustrates the dangers of finite precision arithmetics.
+The same problem arises when using ``lambdify``:
+
+.. code:: python
+
+   >>> cb = sp.lambdify([x, y], logsum)
+   >>> cb(800, -800)
+   inf
+
 In this particular case, the expression could be rewritten
 as:
 
 .. code:: python
 
-   >>> pass  # TODO
+   >>> from sympy import Min, Max, log
+   >>> logsum2 = log(1 + exp(Min(x, y))) + Max(x, y)
+   >>> cb2 = sp.lambdify([x, y], logsum2)
+   >>> cb2(800, -800)
+   800.0
+
+actually that last expression should be written using ``log1p``:
+
+.. code:: python
+
+   >>> from sympy.codegen.cfunctions import log1p
+   >>> logsum3 = log1p(exp(Min(x, y))) + Max(x, y)
+   >>> cb3 = sp.lambdify([x, y], logsum3)
+   >>> print('%.5e' % cb3(0, -99))
+   1.01122e-43
+   >>> print('%.5e' % cb2(0, -99))
+   0.00000e+00
+   >>> print('%.5e' % logsum.subs({x: 0, y: -99}).n(50))
+   1.01122e-43
+
+but that is beside the point: what is important to realize here is
+that a good implementation contains a sorting step. Using ``Min`` and
+``Max`` is not practical when the number of arguments is much larger than 2.
+We need an algorithm:
+
+.. code:: python
+
+   >>> from demologsumexp import logsumexp
+   >>> lse = logsumexp((x, y))
+   >>> lse.rewrite(log)
+   log(exp(x) + exp(y))
+   >>> print(my_ccode(logsumexp.as_FunctionDefinition()))
+   double logsumexp(double * x, int n){
+      sympy_quicksort(x, n);
+      int i = 0;
+      double s = 0.0;
+      while (i < n - 1) {
+         s += exp(x[i]);
+         i += 1;
+      }
+      return log1p(s) + x[n - 1];
+   }
+
+Sorting of arrays is included in some programming langauge standard
+libraries (*e.g.* C++) but in others (*e.g.* C) there is non. For
+these SymPy can provide a support library with templates.
 
 In many algortihms (especially iteraitve ones) a computationally
 cheaper approximation of an expression often works just as well but
