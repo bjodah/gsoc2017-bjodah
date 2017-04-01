@@ -208,7 +208,7 @@ containing common algorithms which are often rewritten today in every
 new project. This module would leverage the to-be-written classes in
 ``sympy.codegen.ast``. Let us consider the Newton-Rhapson method as a
 case study (see `mockups.py
-<https://github.com/bjodah/gsoc2017-bjodah/tree/master/application/mockups.py>`_):
+<https://github.com/bjodah/gsoc2017-bjodah/blob/master/application/mockups.py>`_):
 
 .. code:: python
 
@@ -280,7 +280,8 @@ optimal way. Consider e.g.:
 
 .. code:: python
 
-   >>> pw2 = sp.Piecewise((2/(x + 1), sp.Lt(x, 1)), (sp.exp(1-x), True))
+   >>> from sympy import exp
+   >>> pw2 = sp.Piecewise((2/(x + 1), sp.Lt(x, 1)), (exp(1-x), True))
    >>> cses, (new_expr,) = sp.cse(pw1 + pw2)
    >>> print(cses)
    [(x0, x < 1)]
@@ -390,40 +391,41 @@ Optimizations
 -------------
 Prior to reaching the ``CodePrinters`` the user may want to apply
 transformations to their expressions/AST. Optimization here is
-context and may refer to more accurate precision, or better
-performance (often at the cost of lost significance).
+context dependent and may refer to more higher precision, or better
+performance (often at the cost of significance loss).
 
-Sometimes performance and precision optimizations are not mutually
-exclusive, *e.g.*:
+Sometimes performance and precision `optimizations
+<https://github.com/bjodah/gsoc2017-bjodah/blob/master/application/optimization.py>`_
+are not mutually exclusive, *e.g.*:
 
 .. code:: python
 
    >>> from sympy import log
    >>> expr = 2**x + log(x)/log(2)
-   >>> from optimize import optimize, optims_base2
-   >>> optimize(expr, optims_base2)
+   >>> from optimize import optimize, optims_c99
+   >>> optimize(expr, optims_c99)
    exp2(x) + log2(x)
 
 here the C-code printer would use the ``exp2`` and ``log2`` functions from
-the C99 standard. Some transformations would only be beneficial if
-the magnitude of the variables are within some span (proof of concept
-code is still to be written for this transformation), *e.g.*: 
+the C99 standard, these functions offer slightly better performance
+since the floating point numbers use base 2.
+
+Some functions are specifically designed to avoid catastrophic
+cancellation, *e.g.*: 
 
 .. code:: python
 
-   >>> smart_ccode((2*exp(x) - 2)*(3*exp(y) - 3),
-   ...     typically={x: And(-.1 < x, x < .1)})  # doctest: +SKIP
-   '6*expm1(x)*(exp(y) - 1)'
+   >>> optimize((2*exp(x) - 2)*(3*exp(y) - 3), optims_c99)
+   6*expm1(x)*expm1(y)
 
-Here the proposed printer would use `expm1
+Here `expm1
 <http://en.cppreference.com/w/c/numeric/math/expm1>`_ from the C99
-standard to avoid cancellation in the subtraction.
+standard will conserve significance when ``x`` is close to zero.
 
 Consider the following code:
 
 .. code:: python
 
-   >>> from sympy import exp
    >>> x, y = sp.symbols('x y')
    >>> expr = exp(x) + exp(y)
    >>> sp.ccode(expr)
