@@ -26,14 +26,14 @@ class ReplaceOptim(Optimization):
         return expr.replace(self.query, self.value)
 
 
-def optimize(expr, optimizations):
+def optimize(expr, optimizations, **kwargs):
     """ Apply optimizations to an expression """
     for optim in sorted(optimizations, key=lambda opt: opt.priority, reverse=True):
-        new_expr = optim(expr)
+        new_expr = optim(expr, **kwargs)
         if optim.cost_function is None:
             expr = new_expr
         else:
-            before, after = map(optim.cost_function, (expr, new_expr))
+            before, after = map(lambda x: optim.cost_function(x, **kwargs), (expr, new_expr))
             if before > after:
                 expr = new_expr
     return expr
