@@ -15,8 +15,6 @@ def _max_abs_combo(expr, bounds):
 
 def _approx_sum(add, bounds, reltol=1e-16):
     args_maxabs = [_max_abs_combo(arg, bounds) for arg in add.args]
-    print(add.args)
-    print(args_maxabs)
     maxabs_arg = max(*args_maxabs)
     lim = reltol*maxabs_arg
     return add.func(*[arg for arg, x in zip(add.args, args_maxabs) if x > lim])
@@ -58,10 +56,6 @@ class TaylorApprox(ApproxOptim):
             abserr_hi = abs((val_hi - ref_hi).evalf())
             lo_ok = relerr_lo < reltol or abserr_lo < abstol
             hi_ok = relerr_hi < reltol or abserr_hi < abstol
-            print(expr, n)
-            print(relerr_lo, relerr_hi)
-            print(abserr_lo, abserr_hi)
-            print()
             if hi_ok and lo_ok:
                 cheapest = ser
             else:
