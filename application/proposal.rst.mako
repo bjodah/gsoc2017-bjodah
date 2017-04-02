@@ -44,7 +44,7 @@ I have been an active contributor to SymPy since about 3 years with
 <https://github.com/sympy/sympy/pull/11637>`_), 
 `a handful <https://github.com/sympy/sympy_benchmarks/pulls/bjodah>`_
 for ``sympy_benchmarks``,
-`one <https://https://github.com/symengine/symengine/pull/1075>`_
+`one <https://github.com/symengine/symengine/pull/1075>`_
 for SymEngine and `a few
 <https://github.com/symengine/symengine.py/pulls/bjodah>`_
 for the Python wrappers of SymEngine. I'm also the author of two
@@ -437,7 +437,7 @@ context dependent, and may refer to higher precision, or better
 performance (often at the cost of significance loss).
 
 Sometimes performance and precision `optimizations
-<https://github.com/bjodah/gsoc2017-bjodah/blob/master/application/optimization.py>`_
+<https://github.com/bjodah/gsoc2017-bjodah/blob/master/application/optimizations.py>`_
 are not mutually exclusive, *e.g.*:
 
 .. code:: python
@@ -737,8 +737,8 @@ Phase III,  2017-07-29 – 2017-08-29
 The third phase will focus on providing expression rewriting
 facilities for significance preservation and optimizations. The
 optimization framework will use the pattern matching capabilities
-(most likely along the lines of `optimization.py
-<https://github.com/bjodah/gsoc2017-bjodah/blob/master/application/optimization.py>`_ & `approximations.py
+(most likely along the lines of `optimizations.py
+<https://github.com/bjodah/gsoc2017-bjodah/blob/master/application/optimizations.py>`_ & `approximations.py
 <https://github.com/bjodah/gsoc2017-bjodah/blob/master/application/approximations.py>`_ in the supplementary
 material repository). Different
 domains need different functions of this kind, the focus should
