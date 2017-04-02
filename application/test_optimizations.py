@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function)
 import pytest
 from sympy import log, exp, Symbol
 from sympy.codegen.cfunctions import log2, exp2, expm1, log1p
-from optimize import optimize, log2_opt, exp2_opt, expm1_opt, log1p_opt, optims_c99
+from optimizations import optimize, log2_opt, exp2_opt, expm1_opt, log1p_opt, optims_c99
 
 
 def test_log2_opt():

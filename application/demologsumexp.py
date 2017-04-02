@@ -6,7 +6,7 @@ from operator import add
 from sympy import log, exp, Function, Symbol, IndexedBase, Add, Min, Max
 from sympy.codegen.ast import CodeBlock, AddAugmentedAssignment
 from sympy.codegen.cfunctions import log1p
-from printerdemo import FunctionCall, Declaration, While, ReturnStatement, FunctionDefinition
+from symast import FunctionCall, Declaration, While, ReturnStatement, FunctionDefinition
 
 def logsumexp_naive(args):
     return log(reduce(add, map(exp, args)))

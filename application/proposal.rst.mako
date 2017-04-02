@@ -207,12 +207,13 @@ A new module: ``sympy.codegen.algorithms``, could be created,
 containing common algorithms which are often rewritten today in every
 new project. This module would leverage the to-be-written classes in
 ``sympy.codegen.ast``. Let us consider the Newton-Rhapson method as a
-case study (see `mockups.py
-<https://github.com/bjodah/gsoc2017-bjodah/blob/master/application/mockups.py>`_):
+case study (see `algorithms.py
+<https://github.com/bjodah/gsoc2017-bjodah/blob/master/application/algorithms.py>`_):
 
 .. code:: python
 
-   >>> from mockups import my_ccode, newton_raphson_algorithm
+   >>> from algorithms import newton_raphson_algorithm
+   >>> from printer import my_ccode
    >>> x, k, dx, atol = sp.symbols('x k dx atol')
    >>> expr = sp.cos(k*x) - x**3
    >>> algo = newton_raphson_algorithm(expr, x, atol, dx)
@@ -233,7 +234,8 @@ reference, *e.g.*:
 
 .. code:: python
 
-   >>> from mockups import newton_raphson_function as newton_func, Pointer
+   >>> from algorithms import newton_raphson_function as newton_func
+   >>> from symast import Pointer
    >>> kp = Pointer(k, value_const=True, pointer_const=True)
    >>> print(my_ccode(newton_func(expr, x, (x, kp))))
    double newton(double x, const double * const k){
@@ -254,8 +256,8 @@ headers and libraries used, *e.g.*:
 
 .. code:: python
 
-   >>> from mockups import CPrinter
-   >>> instance = CPrinter()
+   >>> from printer import MyCPrinter
+   >>> instance = MyCPrinter()
    >>> instance.doprint(x/(x+sp.pi))
    'x/(x + M_PI)'
    >>> print(instance.headers, instance.libraries)
@@ -292,8 +294,8 @@ where cse variables have their type deteremined automatically:
 
 .. code:: python
 
-   >>> from mockups import assign_cse
-   >>> code_printer = CPrinter()
+   >>> from symast import assign_cse
+   >>> code_printer = MyCPrinter()
    >>> print(code_printer.doprint(assign_cse(y, pw1 + pw2)))
    {
       const bool x0 = x < 1;
@@ -354,7 +356,7 @@ quite elegant manner solve this:
 
 .. code:: python
 
-   >>> from mockups import PrinterSetting
+   >>> from symast import PrinterSetting
    >>> prec = PrinterSetting('precision')
    >>> algo2 = newton_raphson_algorithm(expr, x, atol=10**(1-prec), delta=dx)
    >>> print(my_ccode(algo2, settings={'precision': 15}))
@@ -402,7 +404,7 @@ are not mutually exclusive, *e.g.*:
 
    >>> from sympy import log
    >>> expr = 2**x + log(x)/log(2)
-   >>> from optimize import optimize, optims_c99
+   >>> from optimizations import optimize, optims_c99
    >>> optimize(expr, optims_c99)
    exp2(x) + log2(x)
 
@@ -470,7 +472,7 @@ printer could have a setting enabling printing of ``Rational`` as
 
 .. code:: python
 
-   >>> from mockups import BoostMPCXXPrinter
+   >>> from printer import BoostMPCXXPrinter
    >>> mp_printer = BoostMPCXXPrinter(settings={'mp_int': True})
    >>> mp_printer.doprint(r-m)
    '-m + cpp_rational(cpp_int("0x56bc75e2d63100001"), cpp_int("0x56bc75e2d63100000"))'
@@ -551,7 +553,7 @@ transformating subexpressions, one way is to use replace:
 .. code:: python
 
    >>> expr = (1 + x)/(2 + 3*log(exp(x) + exp(y)))
-   >>> from optimize import logsumexp_2terms_opt
+   >>> from optimizations import logsumexp_2terms_opt
    >>> optimize(expr, [logsumexp_2terms_opt])
    (x + 1)/(3*log1p(exp(Min(x, y))) + 3*Max(x, y) + 2)
 
