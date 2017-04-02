@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+from __future__ import (absolute_import, division, print_function)
+
 from functools import reduce
 from operator import add
-from sympy import log, exp, Function, Symbol, IndexedBase
+from sympy import log, exp, Function, Symbol, IndexedBase, Add, Min, Max
 from sympy.codegen.ast import CodeBlock, AddAugmentedAssignment
 from sympy.codegen.cfunctions import log1p
-from printerdemo import FunctionCall, Declaration, While, ReturnStatement, FunctionDefinition
+from symast import FunctionCall, Declaration, While, ReturnStatement, FunctionDefinition
 
 def logsumexp_naive(args):
     return log(reduce(add, map(exp, args)))

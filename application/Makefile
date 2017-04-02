@@ -5,9 +5,9 @@ all: proposal.html proposal.pdf
 style.css: ../.binaries/cskeeters-rst2html-style.tar.bz2
 	tar xjmf $< --wildcards --strip-components=1 "*/$@"
 
-proposal.rst: proposal.rst.mako enmako.py logsum.out mockups.py printerdemo.py pow_num.out demologsumexp.py
+proposal.rst: proposal.rst.mako enmako.py logsum.out pow_num.out *.py
 	python3 enmako.py $< -o $@
-	python3 -m doctest $@
+	python3 -m doctest -f $@
 
 proposal.html: proposal.rst style.css rst2html.py
 	python2 ./rst2html.py --stylesheet=style.css $< $@
@@ -15,9 +15,8 @@ proposal.html: proposal.rst style.css rst2html.py
 proposal.tex: proposal.rst
 	rst2latex.py $< $@
 
-proposal.pdf: proposal.tex # proposal.rst
+proposal.pdf: proposal.tex
 	pdflatex $<
-	# rst2pdf $< $@
 
 logsum: logsum.c
 	$(CC) -Wall -Wextra -Werror -o $@ $< -lm
