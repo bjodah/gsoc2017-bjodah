@@ -9,10 +9,18 @@ proposal.rst: proposal.rst.mako enmako.py logsum.out pow_num.out *.py
 	python3 enmako.py $< -o $@
 	python3 -m doctest -f $@
 
+proposal.rst: proposal.rst.mako enmako.py logsum.out pow_num.out *.py
+	python3 enmako.py $< -o $@
+	python3 -m doctest -f $@
+
+proposal_pdf.rst: proposal.rst.mako enmako.py logsum.out pow_num.out *.py
+	python3 enmako.py -g "dict(for_pdf=True)" $< -o $@
+	python3 -m doctest -f $@
+
 proposal.html: proposal.rst style.css rst2html.py
 	python2 ./rst2html.py --stylesheet=style.css $< $@
 
-proposal.tex: proposal.rst
+proposal.tex: proposal_pdf.rst
 	rst2latex.py $< $@
 
 proposal.pdf: proposal.tex

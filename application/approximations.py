@@ -2,22 +2,27 @@
 from __future__ import (absolute_import, division, print_function)
 
 from itertools import product
-from sympy import Add, Symbol, sin, Abs
+from sympy import Add, Symbol, sin, Abs, oo
 from optimizations import ReplaceOptim, Optimization
 
-def _max_abs_combo(expr, bounds):
+def _extremum_abs_combo(expr, bounds, cb):
     bounds = {k: v for k, v in bounds.items() if expr.has(k)}
     keys = tuple(bounds.keys())
-    max_seen = 0
+    extremum_seen = None
     for vals in product(*bounds.values()):  # expensive, could be more intelligent.
-        max_seen = max(max_seen, abs(expr.subs(dict(zip(keys, vals)))))
-    return max_seen
+        val = abs(expr.subs(dict(zip(keys, vals))))
+        if extremum_seen is None:
+            extremum_seen = val
+        else:
+            extremum_seen = cb(extremum_seen, val)
+    return extremum_seen
 
 def _approx_sum(add, bounds, reltol=1e-16):
-    args_maxabs = [_max_abs_combo(arg, bounds) for arg in add.args]
-    maxabs_arg = max(*args_maxabs)
-    lim = reltol*maxabs_arg
-    return add.func(*[arg for arg, x in zip(add.args, args_maxabs) if x > lim])
+    args_maxabs = [_extremum_abs_combo(arg, bounds, max) for arg in add.args]
+    args_minabs = [_extremum_abs_combo(arg, bounds, min) for arg in add.args]
+    maxminabs_arg = max(*args_minabs)
+    lim = reltol*maxminabs_arg
+    return add.func(*[arg for arg, x in zip(add.args, args_maxabs) if x in (oo, float('inf')) or x > lim])
 
 
 class ApproxOptim(ReplaceOptim):
