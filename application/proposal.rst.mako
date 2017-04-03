@@ -14,7 +14,8 @@ About me
 +---------------+----------------------------------------------------------------+
 |Name           |Björn Dahlgren                                                  |
 +---------------+----------------------------------------------------------------+
-|Email          |`bjodah@gmail.com <bjodah@gmail.com>`_                          |
+|Email          |`bjodah@gmail.com <bjodah@gmail.com>`_, `bda@kth.se             |
+|               |<bda@kth.se>`_                                                  |
 +---------------+----------------------------------------------------------------+
 |University     |`KTH Royal Institute of Technology <http://www.kth.se/en>`_,    |
 |               |Stockholm, Sweden                                               |
