@@ -1,14 +1,16 @@
 #!/bin/bash
 if [ ! -d build ]; then mkdir build; fi
 if [ ! -d ccache ]; then mkdir ccache; fi
-docker run --rm -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) -v $(pwd)/build:/build -v $(pwd)/ccache:/ccache -i symeng /bin/bash -s <<'EOF'
+docker run --rm -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) -v $(pwd)/build:/build -v $(pwd)/ccache:/ccache -i ${1:-"bjodah/se_llvm"} /bin/bash -s <<'EOF'
+apt-get update
+apt-get --quiet --assume-yes install g++-4.9 gcc-4.9
 SOURCE_DIR=/opt/symengine
 cd $SOURCE_DIR
 git checkout v0.3.0
 cd /build
 source activate $our_install_dir
-export CXX="ccache clang++"
-export CC="ccache clang"
+export CXX="ccache g++-4.9"
+export CC="ccache gcc-4.9"
 export CCACHE_DIR=/ccache
 ccache -M 400M
 export CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"

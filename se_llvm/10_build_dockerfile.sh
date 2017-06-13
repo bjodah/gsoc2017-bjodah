@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build -t symeng environment
+docker build -t ${1:-"bjodah/se_llvm"} environment
