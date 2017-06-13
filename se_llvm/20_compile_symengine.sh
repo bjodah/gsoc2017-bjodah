@@ -11,6 +11,7 @@ export CXX="ccache clang++"
 export CC="ccache clang"
 export CCACHE_DIR=/ccache
 ccache -M 400M
+export CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
 cmake -DCMAKE_INSTALL_PREFIX=$our_install_dir -DCMAKE_BUILD_TYPE:STRING="Release" -DWITH_LLVM:BOOL=ON -DINTEGER_CLASS:STRING=gmp -DBUILD_SHARED_LIBS:BOOL=ON -DWITH_MPC=yes $SOURCE_DIR
 make -j 4
 make install
