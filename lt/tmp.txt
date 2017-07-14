@@ -1,0 +1,6 @@
+.left-column75[
+*Balancing chemical reactions:*
+]
+.right-column25[
+<img src="atlantis.jpg" alt="Space shuttle" style="width:100%">
+]

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ChemPy</title>
+    <meta charset="utf-8">
+    <!-- Make the font sizes much bigger than the remark defaults. Also, don't
+    rely on web fonts.-->
+    <style>
+      h1, h2, h3 {
+        font-family: 'Georgia';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Monospace'; font-size: 20pt}
+      .remark-slide-content { font-size: 20pt }
+      .remark-slide-content h1 { font-size: 60pt }
+      .remark-slide-content h2 { font-size: 40pt}
+      .remark-slide-content h3 { font-weight: bold }
+      .remark-slide-content {background-positionL 0% 0%; background-size: contain}
+
+      .left-column75 {
+        width: 75%;
+        float: left;
+      }
+      .right-column25 {
+        width: 25%;
+        float: right;
+      }
+
+      .left-column {
+        width: 45%;
+        float: left;
+      }
+      .right-column {
+        width: 50%;
+        float: right;
+      }
+      .qmark {
+        font-weight: bold;
+        color: darkred;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# ChemPy 
+http://github.com/bjodah/chempy
+### Lightning talk - SciPy 2017
+### 2017-07-13
+
+---
+
+## Who am I
+
+.left-column75[
+### Björn Dahlgren
+**@bjodah**
+
+- PhD student, KTH Royal Institute of Technology
+- Modelling radiation chemistry
+- Scholarship recipient
+- SymPy contributor
+]
+.right-column25[
+<img src="kth.jpg" alt="KTH" style="width:130%">
+]
+
+---
+
+## What is ChemPy?
+
+- Python package useful for physical chemistry.
+- It uses the scientific python stack (numpy, scipy, matplotlib & scipy).
+
+.left-column[
+<img src="python.png" alt="KTH" style="width:100%">
+]
+.right-column[
+<center>
+<font style="font-size:200pt">⚗
+</center>
+]
+
+
+---
+
+## What can you do with ChemPy?
+
+*Parse chemical formulas from strings:*
+```py
+>>> from chempy import Substance as S
+>>> ferricn = S.from_formula('Fe(CN)6-3')
+>>> ferricn.composition
+{0: -3, 26: 1, 6: 6, 7: 6}
+>>> ferricn.mass
+211.955
+```
+
+---
+
+## What can you do with ChemPy?
+
+*Parse chemical formulas from strings:*
+```py
+>>> print(ferricn.unicode_name)
+Fe(CN)₆³⁻
+>>> print(ferricn.latex_name)
+Fe(CN)_{6}^{3-}
+>>> print(ferricn.html_name)
+Fe(CN)<sub>6</sub><sup>3-</sup>
+```
+
+---
+
+## What can you do with ChemPy? <img src="atlantis.jpg" alt="Space shuttle" style="width:30%; float: right">
+*Balancing chemical reactions:*
+<center>
+<span class="qmark">?</span>NH<sub>4</sub>ClO<sub>4</sub> + <span class="qmark">?</span>Al <b>&rarr;</b> <span class="qmark">?</span>Al<sub>2</sub>O<sub>3</sub> + <span class="qmark">?</span>HCl + <span class="qmark">?</span>H<sub>2</sub>O + <span class="qmark">?</span>N<sub>2</sub>
+</center>
+```py
+>>> import chempy
+>>> r = {'NH4ClO4', 'Al'}
+>>> p = {'Al2O3', 'HCl', 'H2O', 'N2'}
+```
+---
+
+## What can you do with ChemPy? <img src="atlantis.jpg" alt="Space shuttle" style="width:30%; float: right">
+*Balancing chemical reactions:*
+<center>
+<span class="qmark">?</span>NH<sub>4</sub>ClO<sub>4</sub> + <span class="qmark">?</span>Al <b>&rarr;</b> <span class="qmark">?</span>Al<sub>2</sub>O<sub>3</sub> + <span class="qmark">?</span>HCl + <span class="qmark">?</span>H<sub>2</sub>O + <span class="qmark">?</span>N<sub>2</sub>
+</center>
+```py
+>>> import chempy
+>>> r = {'NH4ClO4', 'Al'}
+>>> p = {'Al2O3', 'HCl', 'H2O', 'N2'}
+>>> a = chempy.balance_stoichiometry(r, p)
+>>> print(a[0])
+{'Al': 10, 'NH4ClO4': 6}
+>>> print(a[1])
+{'Al2O3': 5, 'H2O': 9, 'HCl': 6, 'N2': 3}
+```
+---
+
+class: center, middle
+
+# Thank you!
+
+    </textarea>
+    <script src="remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
