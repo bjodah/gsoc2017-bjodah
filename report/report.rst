@@ -282,7 +282,6 @@ on code-generation with SymPy have been added to `the list
 <https://github.com/sympy/sympy/wiki/GSoC-2018-Ideas#code-generation>`_
 of potential ideas for next years GSoC.
 
-
 Post-GSoC
 ---------
 I plan to continue to contribute to the SymPy project, and start using
