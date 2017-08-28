@@ -38,6 +38,7 @@ Jason Moore, Kenneth Lyons, Aaron Meurer and I (my `commits <https://github.com/
 tutorial in code generation with SymPy at the SciPy 2017 conference.
 
 The majority of the work are contained in these pull-requests:
+
 - symengine.py, `#112 <https://github.com/symengine/symengine.py/pull/112>`_ (merged):
   Heterogeneous output in Lambdify.
 - symengine.py, `#171
@@ -62,6 +63,7 @@ The majority of the work are contained in these pull-requests:
   
 
 In addition there were smaller pull-requests made & merged:
+
 - sympy_benchmarks: `#37  <https://github.com/sympy/sympy_benchmarks/pull/37>`_,
   `#38 <https://github.com/sympy/sympy_benchmarks/pull/38>`_,
   `#39 <https://github.com/sympy/sympy_benchmarks/pull/39>`_,
