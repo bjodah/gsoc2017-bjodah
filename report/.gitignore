@@ -1,0 +1,6 @@
+*.aux
+*.html
+*.pdf
+*.tex
+style.css
+*.log
