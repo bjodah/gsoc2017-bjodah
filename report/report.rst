@@ -34,12 +34,11 @@ created during the first part of GSoC:
 
 - https://github.com/sympy/scipy-2017-codegen-tutorial
 
-Jason Moore, Kenneth Lyons, Aaron Meurer and I (my `commits <https://github.com/sympy/scipy-2017-codegen-tutorial/commits/master?author=bjodah>`) created this for the
+Jason Moore, Kenneth Lyons, Aaron Meurer and I (my `commits <https://github.com/sympy/scipy-2017-codegen-tutorial/commits/master?author=bjodah>`_) created this for the
 tutorial in code generation with SymPy at the SciPy 2017 conference.
 
 The majority of the work are contained in these pull-requests:
-- symengine.py, `#112
-  <https://github.com/symengine/symengine.py/pull/112>`_ (merged):
+- symengine.py, `#112 <https://github.com/symengine/symengine.py/pull/112>`_ (merged):
   Heterogeneous output in Lambdify.
 - symengine.py, `#171
   <https://github.com/symengine/symengine.py/pull/171>`_ (merged):
@@ -63,29 +62,28 @@ The majority of the work are contained in these pull-requests:
   
 
 In addition there were smaller pull-requests made & merged:
-- sympy_benchmarks: `#37
-  <https://github.com/sympy/sympy_benchmarks/pull/37>`_, `#38
-  <https://github.com/sympy/sympy_benchmarks/pull/38>`_, `#39
-  <https://github.com/sympy/sympy_benchmarks/pull/39>`_, `#40
-  <https://github.com/sympy/sympy_benchmarks/pull/40>`_:
+- sympy_benchmarks: `#37  <https://github.com/sympy/sympy_benchmarks/pull/37>`_,
+  `#38 <https://github.com/sympy/sympy_benchmarks/pull/38>`_,
+  `#39 <https://github.com/sympy/sympy_benchmarks/pull/39>`_,
+  `#40 <https://github.com/sympy/sympy_benchmarks/pull/40>`_:
   Benchmarks for lambidfy and common sub-expression elimination.
 - sympy: `#12686 <https://github.com/sympy/sympy/pull/12686>`_
-  (Support for __abs__ in SymPy matrices), `#12692
-  <https://github.com/sympy/sympy/pull/12692>`_ (subclass support for
+  (Support for __abs__ in SymPy matrices),
+  `#12692 <https://github.com/sympy/sympy/pull/12692>`_ (subclass support for
   SymPy's deprecation decorator), `#12762
   <https://github.com/sympy/sympy/pull/12762>`_ (Fix floating point
-  error under windows), `#12805
-  <https://github.com/sympy/sympy/pull/12805>`_ Revert change to
+  error under windows),
+  `#12805 <https://github.com/sympy/sympy/pull/12805>`_ Revert change to
   cse (performance regression), `#12764
-  <https://github.com/sympy/sympy/pull/12764>`_ environment variable use, `#12833
-  <https://github.com/sympy/sympy/pull/12883>`_ string formatting,
+  <https://github.com/sympy/sympy/pull/12764>`_ environment variable use,
+  `#12833 <https://github.com/sympy/sympy/pull/12883>`_ string formatting,
   `#12944 <https://github.com/sympy/sympy/pull/12944>`_ allow relative
-  path in autowrap, `#13063
-  <https://github.com/sympy/sympy/pull/13063>`_ fix test timing script
-  (and updated timings), `#12833 (some of the commits)
-  <https://github.com/sympy/sympy/pull/12833>`_ Allow custom class
-  in autowrap & codegen, `#12843 (one of the commits)
-  <https://github.com/sympy/sympy/pull/12843>`_ allow changing compile
+  path in autowrap,
+  `#13063 <https://github.com/sympy/sympy/pull/13063>`_ fix test timing script
+  (and updated timings),
+  `#12833 (some of the commits) <https://github.com/sympy/sympy/pull/12833>`_ Allow custom class
+  in autowrap & codegen,
+  `#12843 (one of the commits) <https://github.com/sympy/sympy/pull/12843>`_ allow changing compile
   arguments in ``CythonCodeWrapper``.
   
 

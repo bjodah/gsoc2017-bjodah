@@ -14,7 +14,7 @@ build:
     - PYTHONPATH=$(pwd)/sympy python3 -m doctest -f report.rst
     - make
     - cd -
-    - bash -ce '! grep "System Message:" application/*.html'
+    - bash -ce '! grep "System Message:" report/*.html'
     - mkdir -p deploy/$CI_BRANCH
     - cp application/proposal.rst application/*.html application/*.pdf report/*.html report/*.pdf deploy/$CI_BRANCH
 
