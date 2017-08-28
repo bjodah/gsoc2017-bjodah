@@ -10,7 +10,8 @@ build:
     - cd -
     - bash -ce '! grep "System Message:" application/*.html'
     - cd ./report;
-    - python3 -m doctest -f report.rst
+    - git clone git://github.com/bjodah/sympy.git --branch codegen-ast-more-nodes
+    - PYTHONPATH=$(pwd)/sympy python3 -m doctest -f report.rst
     - make
     - cd -
     - bash -ce '! grep "System Message:" application/*.html'
