@@ -52,7 +52,7 @@ The majority of the work are contained in these pull-requests:
   PythonCodePrinter, MpmathPrinter, SymPyPrinter NumPyPrinter, SciPyPrinter.
 - sympy, `#13194 <https://github.com/sympy/sympy/pull/13063>`_ (open):
   Add ``.codegen.rewriting`` module.
-- sympy, `#13200 <https://github.com/sympy/sympy/pull/13200>`_ (open):
+- sympy, `#13200 <https://github.com/sympy/sympy/pull/13200>`_ (merged):
   Add ``.codegen.approximations`` module.
 - sympy, `#13100 <https://github.com/sympy/sympy/pull/13100>`_ (open):
   More AST nodes. Building on #12693, this is the biggest PR. In
@@ -277,7 +277,10 @@ written manually (presumably as templates), but the amount of template
 rendering logic can be significantly reduced. Having algorithm AST
 factories such as the one for Newton's method in
 ``sympy.codegen.ast.algorithms`` is also exciting since those
-algorithms can be unit-tested as part of SymPy.
+algorithms can be unit-tested as part of SymPy. Ideas for furthor work
+on code-generation with SymPy have been added to `the list
+<https://github.com/sympy/sympy/wiki/GSoC-2018-Ideas#code-generation>`_
+of potential ideas for next years GSoC.
 
 
 Post-GSoC
